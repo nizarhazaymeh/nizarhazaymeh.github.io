@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nizar Hazaymeh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* ============ charcoal & electric blue ============ */
+:root{
+  --ground:#EEF0F3; --surface:#FFFFFF; --surface-2:#F5F7F9;
+  --ink:#10131A; --ink-2:#353C48; --muted:#5A6373; --faint:#8992A1;
+  --rule:#D4D9E0; --rule-soft:#E3E7EC;
+  --accent:#1466E8; --accent-ink:#0A4CB0; --accent-soft:#DEEAFD;
+  --mark:#55606F;
+  --glow:rgba(20,102,232,.16);
+  --maxw:1120px;
+  --ease:cubic-bezier(.22,.72,.26,1);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0B0E13; --surface:#12161D; --surface-2:#181D26;
+    --ink:#E9EDF3; --ink-2:#C0C8D4; --muted:#8B95A4; --faint:#69737F;
+    --rule:#262D38; --rule-soft:#1D232C;
+    --accent:#4D91FF; --accent-ink:#8DB7FF; --accent-soft:#10243F;
+    --mark:#7C8899;
+    --glow:rgba(77,145,255,.22);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0B0E13; --surface:#12161D; --surface-2:#181D26;
+  --ink:#E9EDF3; --ink-2:#C0C8D4; --muted:#8B95A4; --faint:#69737F;
+  --rule:#262D38; --rule-soft:#1D232C;
+  --accent:#4D91FF; --accent-ink:#8DB7FF; --accent-soft:#10243F;
+  --mark:#7C8899;
+  --glow:rgba(77,145,255,.22);
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-behavior:smooth}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:"Newsreader",Georgia,"Times New Roman",serif;
+  font-size:17px; line-height:1.62; font-optical-sizing:auto;
+  transition:background-color .4s var(--ease), color .4s var(--ease);
+}
+.wrap{max-width:var(--maxw); margin:0 auto; padding:0 28px}
+a{color:inherit}
+::selection{background:var(--accent-soft); color:var(--accent-ink)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:2px}
+
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:500;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--faint); margin:0;
+}
+h1,h2,h3,h4{font-family:"Archivo",system-ui,-apple-system,sans-serif; text-wrap:balance; margin:0}
+
+/* ============ animation primitives ============ */
+@keyframes rise{from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:none}}
+@keyframes fade{from{opacity:0} to{opacity:1}}
+@keyframes growx{from{transform:scaleX(0)} to{transform:scaleX(1)}}
+@keyframes sweep{from{background-position:120% 0} to{background-position:-20% 0}}
+
+.reveal{opacity:0; animation:rise .62s var(--ease) forwards; animation-delay:var(--d,0ms)}
+
+/* a single restrained flourish: the rule under the masthead draws itself in */
+.drawline{transform-origin:left; animation:growx .9s var(--ease) .35s both}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{animation:none!important; transition:none!important}
+  .reveal,.drawline,.gbar,.lfill{opacity:1!important; transform:none!important}
+  .is-open .chev{transform:rotate(90deg)!important}
+}
+
+/* ============ masthead ============ */
+header.mast{border-bottom:1px solid var(--rule); background:var(--surface);
+  transition:background-color .4s var(--ease), border-color .4s var(--ease)}
+.mast-in{display:flex; flex-wrap:wrap; gap:44px; align-items:flex-end; padding:56px 0 36px}
+.mast-id{flex:1 1 440px; min-width:0}
+.mast h1{font-size:clamp(40px,6.4vw,66px); font-weight:700; letter-spacing:-.03em;
+  line-height:1.02; margin-bottom:14px}
+.mast h1 .dot{color:var(--accent)}
+.role{font-family:"Archivo",sans-serif; font-size:16px; font-weight:600;
+  letter-spacing:.01em; color:var(--accent-ink); margin-bottom:20px}
+.blurb{max-width:62ch; color:var(--ink-2); font-size:19px; line-height:1.6; margin:0}
+.contact{display:flex; flex-direction:column; gap:9px; align-items:flex-start}
+.clink{
+  position:relative; display:inline-flex; align-items:center; gap:9px; text-decoration:none;
+  font-family:"IBM Plex Mono",monospace; font-size:12.5px; color:var(--ink-2);
+  border:1px solid var(--rule); border-radius:3px; padding:8px 13px; background:var(--surface);
+  transition:border-color .22s var(--ease), color .22s var(--ease),
+             background-color .22s var(--ease), transform .22s var(--ease);
+}
+.clink:hover{border-color:var(--accent); color:var(--accent-ink);
+  background:var(--accent-soft); transform:translateY(-1px)}
+.clink .k{color:var(--faint); transition:color .22s var(--ease)}
+.clink:hover .k{color:var(--accent)}
+.themebtn{
+  font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted); background:none;
+  border:1px solid var(--rule); border-radius:3px; padding:7px 12px; cursor:pointer;
+  transition:border-color .22s var(--ease), color .22s var(--ease), transform .22s var(--ease);
+}
+.themebtn:hover{border-color:var(--accent); color:var(--accent-ink); transform:translateY(-1px)}
+
+/* ============ readout strip ============ */
+.strip{display:grid; grid-template-columns:repeat(5,1fr);
+  border-top:1px solid var(--rule); background:var(--surface);
+  transition:background-color .4s var(--ease), border-color .4s var(--ease)}
+.cell{padding:20px 0 24px; border-left:1px solid var(--rule-soft); position:relative}
+.cell:not(:first-child){padding-left:22px}
+.cell:first-child{border-left:0}
+.cell::after{
+  content:""; position:absolute; left:0; bottom:0; height:2px; width:100%;
+  background:var(--accent); transform:scaleX(0); transform-origin:left;
+  transition:transform .3s var(--ease);
+}
+.cell:not(:first-child)::after{left:22px; width:calc(100% - 22px)}
+.cell:hover::after{transform:scaleX(1)}
+.cell .v{font-family:"Archivo",sans-serif; font-weight:700; font-size:29px;
+  letter-spacing:-.022em; line-height:1.05; font-variant-numeric:tabular-nums}
+.cell .k{margin-top:5px; font-family:"IBM Plex Mono",monospace; font-size:10.5px;
+  letter-spacing:.13em; text-transform:uppercase; color:var(--faint)}
+@media (max-width:880px){
+  .strip{grid-template-columns:repeat(2,1fr)}
+  .cell{border-left:0; border-top:1px solid var(--rule-soft); padding-left:0!important}
+  .cell:first-child,.cell:nth-child(2){border-top:0}
+  .cell::after{left:0!important; width:100%!important}
+}
+
+/* ============ sections ============ */
+section{padding:62px 0 6px}
+.sectitle{font-size:26px; font-weight:700; letter-spacing:-.022em; margin:8px 0 10px}
+.secnote{color:var(--muted); font-size:15.5px; max-width:64ch; margin:0 0 28px}
+.rule{height:1px; background:var(--rule); margin:0 0 4px}
+
+/* ============ flagship entries ============ */
+.flag{position:relative; padding:32px 0 34px; border-bottom:1px solid var(--rule-soft)}
+.flag::before,.proj::before{
+  content:""; position:absolute; left:0; top:26px; bottom:26px; width:2px;
+  background:var(--accent); transform:scaleY(0); transform-origin:top;
+  transition:transform .34s var(--ease);
+}
+.flag:hover::before,.proj:hover::before{transform:scaleY(1)}
+.flag-top{display:flex; flex-wrap:wrap; gap:11px 14px; align-items:center; margin-bottom:7px}
+.flag h3{font-size:30px; font-weight:700; letter-spacing:-.024em;
+  transition:color .24s var(--ease)}
+.flag:hover h3{color:var(--accent-ink)}
+.tag{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.11em;
+  text-transform:uppercase; padding:4px 9px; border-radius:2px;
+  border:1px solid var(--rule); color:var(--muted); white-space:nowrap}
+.tag.role{background:var(--accent-soft); border-color:transparent; color:var(--accent-ink)}
+.tagline{font-family:"Archivo",sans-serif; font-size:16.5px; font-weight:500;
+  color:var(--accent-ink); margin:0 0 14px}
+.flag p.body{max-width:66ch; color:var(--ink-2); margin:0 0 20px; font-size:17.5px}
+.flag-grid{display:grid; grid-template-columns:1fr 290px; gap:36px; align-items:start}
+@media (max-width:840px){.flag-grid{grid-template-columns:1fr; gap:22px}}
+.facts{margin:0; border-top:1px solid var(--rule-soft)}
+.fact{display:flex; justify-content:space-between; gap:14px; padding:8px 0;
+  border-bottom:1px solid var(--rule-soft); font-family:"IBM Plex Mono",monospace;
+  font-size:12.5px; transition:border-color .22s var(--ease)}
+.fact:hover{border-bottom-color:var(--accent)}
+.fact dt{color:var(--faint); letter-spacing:.04em; white-space:nowrap}
+.fact dd{margin:0; color:var(--ink); text-align:right; font-variant-numeric:tabular-nums}
+.stack{display:flex; flex-wrap:wrap; gap:6px; margin:0}
+.chip{font-family:"IBM Plex Mono",monospace; font-size:11.5px; padding:4px 9px;
+  border:1px solid var(--rule); border-radius:2px; color:var(--ink-2); background:var(--surface);
+  transition:border-color .2s var(--ease), color .2s var(--ease),
+             background-color .2s var(--ease), transform .2s var(--ease)}
+.chip:hover{border-color:var(--accent); color:var(--accent-ink);
+  background:var(--accent-soft); transform:translateY(-1px)}
+
+/* ============ project grid ============ */
+.grid2{display:grid; grid-template-columns:repeat(2,1fr); gap:0 44px}
+@media (max-width:840px){.grid2{grid-template-columns:1fr}}
+.proj{position:relative; padding:26px 0; border-bottom:1px solid var(--rule-soft)}
+.proj::before{top:22px; bottom:22px}
+.proj h4{font-size:20px; font-weight:600; letter-spacing:-.015em; margin-bottom:3px;
+  transition:color .24s var(--ease)}
+.proj:hover h4{color:var(--accent-ink)}
+.proj .tagline{font-size:14.5px; margin-bottom:10px}
+.proj p{font-size:16px; color:var(--ink-2); margin:0 0 13px; max-width:54ch}
+.proj .meta{display:flex; flex-wrap:wrap; gap:7px 13px; align-items:center;
+  font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--faint)}
+.proj .meta b{color:var(--accent-ink); font-weight:400}
+.ghview{color:var(--accent-ink); text-decoration:none; border-bottom:1px solid var(--accent);
+  padding-bottom:1px; transition:background-color .18s var(--ease)}
+.ghview:hover{background:var(--accent-soft)}
+.fact a{color:var(--accent-ink); text-decoration:none; border-bottom:1px solid var(--accent)}
+
+/* ============ minor list ============ */
+.minor{display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:0 36px}
+.mrow{display:flex; justify-content:space-between; gap:14px; padding:10px 0;
+  border-bottom:1px solid var(--rule-soft); align-items:baseline;
+  transition:border-color .2s var(--ease), padding-left .24s var(--ease)}
+.mrow:hover{border-bottom-color:var(--accent); padding-left:6px}
+.mrow .nm{font-family:"Archivo",sans-serif; font-weight:500; font-size:15px}
+.mrow .ct{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--faint);
+  white-space:nowrap}
+
+/* ============ engagements timeline ============ */
+.gantt{background:var(--surface); border:1px solid var(--rule); border-radius:4px;
+  padding:24px 26px 18px; overflow-x:auto;
+  transition:background-color .4s var(--ease), border-color .4s var(--ease)}
+.gtable{min-width:620px}
+.grow{display:grid; grid-template-columns:220px 1fr; gap:18px; align-items:center;
+  padding:7px 0; border-bottom:1px solid var(--rule-soft)}
+.grow:last-child{border-bottom:0}
+.gname{font-family:"Archivo",sans-serif; font-size:14px; font-weight:500;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  transition:color .22s var(--ease)}
+.grow:hover .gname{color:var(--accent-ink)}
+.gtrack{position:relative; height:20px}
+.gtrack .grid{position:absolute; inset:0; display:flex}
+.gtrack .grid i{flex:1; border-left:1px solid var(--rule-soft)}
+.gtrack .grid i:first-child{border-left:0}
+.gbar{position:absolute; top:4px; height:12px; background:var(--mark);
+  border-radius:4px; min-width:10px;
+  transform:scaleX(0); transform-origin:left;
+  animation:growx .68s var(--ease) forwards; animation-delay:var(--d,0ms);
+  transition:background-color .22s var(--ease), box-shadow .22s var(--ease)}
+.grow.lead .gbar{background:var(--accent)}
+.grow:hover .gbar{background:var(--accent); box-shadow:0 0 0 4px var(--glow)}
+.ghead{display:grid; grid-template-columns:220px 1fr; gap:18px; padding-bottom:8px;
+  border-bottom:1px solid var(--rule); margin-bottom:4px}
+.gmonths{display:flex}
+.gmonths span{flex:1; font-family:"IBM Plex Mono",monospace; font-size:10px;
+  color:var(--faint); text-align:center; letter-spacing:.04em}
+.glegend{display:flex; gap:20px; flex-wrap:wrap; margin-top:16px;
+  font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--faint)}
+.glegend b{display:inline-block; width:22px; height:8px; border-radius:3px;
+  vertical-align:middle; margin-right:7px}
+
+/* ============ capabilities ============ */
+.caps{display:grid; grid-template-columns:repeat(auto-fit,minmax(272px,1fr)); gap:0 40px}
+.cap{padding:20px 0 22px; border-bottom:1px solid var(--rule-soft)}
+.cap h4{font-size:12px; font-family:"IBM Plex Mono",monospace; font-weight:500;
+  letter-spacing:.13em; text-transform:uppercase; color:var(--faint); margin-bottom:12px}
+.langs{max-width:560px; margin-bottom:34px}
+.lrow{display:grid; grid-template-columns:126px 1fr 54px; gap:14px; align-items:center;
+  padding:8px 0; border-bottom:1px solid var(--rule-soft)}
+.lname{font-family:"Archivo",sans-serif; font-size:14px; font-weight:500;
+  transition:color .22s var(--ease)}
+.lrow:hover .lname{color:var(--accent-ink)}
+.ltrack{height:9px; background:var(--rule-soft); border-radius:4px; overflow:hidden}
+.lfill{display:block; height:100%; background:var(--mark); border-radius:4px;
+  transform:scaleX(0); transform-origin:left;
+  animation:growx .72s var(--ease) forwards; animation-delay:var(--d,0ms);
+  transition:background-color .22s var(--ease)}
+.lrow:first-child .lfill{background:var(--accent)}
+.lrow:hover .lfill{background:var(--accent)}
+.lpct{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--muted);
+  text-align:right; font-variant-numeric:tabular-nums}
+
+/* ============ pressable disclosure ============ */
+.expandable{
+  cursor:pointer; margin-inline:-18px; padding-inline:18px; border-radius:5px;
+  transition:background-color .22s var(--ease);
+  -webkit-tap-highlight-color:transparent;
+}
+.expandable:hover{background:var(--surface-2)}
+.expandable:has(.disclose:focus-visible){background:var(--surface-2)}
+.disclose{cursor:pointer}
+.disclose{
+  font:inherit; -webkit-appearance:none; appearance:none;
+  display:inline-flex; align-items:center; gap:9px; margin-top:15px;
+  font-family:"IBM Plex Mono",monospace; font-size:11.5px; font-weight:500;
+  letter-spacing:.07em; text-transform:uppercase; color:var(--accent-ink);
+  border:1px solid var(--accent); border-radius:999px; padding:7px 15px;
+  background:var(--accent-soft); white-space:nowrap;
+  transition:box-shadow .22s var(--ease), background-color .22s var(--ease),
+             transform .16s var(--ease);
+}
+.expandable:hover .disclose{box-shadow:0 0 0 4px var(--glow)}
+.expandable:active .disclose{transform:translateY(1px)}
+.chev{display:inline-block; font-size:12px; line-height:1;
+  transition:transform .32s var(--ease)}
+.is-open .chev{transform:rotate(90deg)}
+.parts-wrap{display:grid; grid-template-rows:0fr;
+  transition:grid-template-rows .4s var(--ease)}
+.is-open .parts-wrap{grid-template-rows:1fr}
+.parts-inner{overflow:hidden}
+.parts{margin:20px 0 4px; border-top:1px solid var(--rule)}
+.part{display:grid; grid-template-columns:210px 1fr; gap:18px; padding:9px 0;
+  border-bottom:1px solid var(--rule-soft); align-items:baseline;
+  transition:border-color .2s var(--ease)}
+.part:hover{border-bottom-color:var(--accent)}
+@media (max-width:640px){.part{grid-template-columns:1fr; gap:3px}}
+.part .pn{font-family:"IBM Plex Mono",monospace; font-size:12.5px;
+  color:var(--accent-ink); overflow-wrap:anywhere}
+.part .pd{font-size:15.5px; color:var(--ink-2)}
+
+footer{margin-top:70px; border-top:1px solid var(--rule); background:var(--surface);
+  transition:background-color .4s var(--ease), border-color .4s var(--ease)}
+.foot-in{padding:28px 0 44px; display:grid; grid-template-columns:1fr auto; gap:18px 40px;
+  font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--faint)}
+@media (max-width:760px){.foot-in{grid-template-columns:1fr}}
+.foot-in p{margin:0; max-width:78ch; line-height:1.75}
+</style>
+</head>
+<body>
+
+<header class="mast">
+  <div class="wrap">
+    <div class="mast-in">
+      <div class="mast-id">
+        <p class="eyebrow reveal" style="--d:0ms; margin-bottom:15px">Engineering portfolio</p>
+        <h1 class="reveal" style="--d:70ms"><span id="name"></span><span class="dot">.</span></h1>
+        <div class="role reveal" id="role" style="--d:150ms"></div>
+        <p class="blurb reveal" id="blurb" style="--d:230ms"></p>
+      </div>
+      <div class="contact reveal" id="contact" style="--d:330ms"></div>
+    </div>
+  </div>
+  <div class="wrap"><div class="strip" id="strip"></div></div>
+</header>
+
+<main class="wrap">
+
+  <section id="work">
+    <p class="eyebrow">Selected work</p>
+    <h2 class="sectitle">Platforms built for institutions</h2>
+    <p class="secnote">Two national-scale systems for Jordanian public institutions, both built
+      with a team and both still in active development.</p>
+    <div class="rule drawline"></div>
+    <div id="tier1"></div>
+  </section>
+
+  <section id="shipped">
+    <p class="eyebrow">Products &amp; prototypes</p>
+    <h2 class="sectitle">Delivered end to end</h2>
+    <p class="secnote">Hackathon builds and product work taken from an empty repository to
+      something that runs.</p>
+    <div class="grid2" id="tier2"></div>
+  </section>
+
+  <section id="more">
+    <p class="eyebrow">Further work</p>
+    <h2 class="sectitle">Sites, apps and simulations</h2>
+    <div class="grid2" id="tier3"></div>
+    <h3 class="eyebrow" style="margin:38px 0 10px">Also in the record</h3>
+    <div class="minor" id="tier4"></div>
+  </section>
+
+  <section id="timeline">
+    <p class="eyebrow">Engagements</p>
+    <h2 class="sectitle">Concurrent projects, 2026</h2>
+    <p class="secnote" id="tlnote"></p>
+    <div class="gantt">
+      <div class="gtable">
+        <div class="ghead"><span></span><div class="gmonths" id="gmonths"></div></div>
+        <div id="grows"></div>
+      </div>
+      <div class="glegend">
+        <span><b style="background:var(--accent)"></b>Lead contributor or sole developer</span>
+        <span><b style="background:var(--mark)"></b>Team contributor</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="skills">
+    <p class="eyebrow">Capabilities</p>
+    <h2 class="sectitle">Languages and technologies</h2>
+    <p class="secnote">Language shares are measured from the codebases themselves, weighted by
+      how much of each repository is mine.</p>
+    <div class="langs" id="langs"></div>
+    <div class="caps" id="caps"></div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap"><div class="foot-in">
+    <p id="footnote"></p>
+    <p id="gen"></p>
+  </div></div>
+</footer>
+
+<script type="application/json" id="portfolio-data">{"stats":{"profile":{"name":"Nizar Hazaymeh","title":"Full-Stack & AI Engineer","location":"Amman, Jordan","email":"nizar.hazaymeh@gmail.com","blurb":"I build civic and government-scale platforms — traffic intelligence, citizen-experience analytics, crisis simulation — mostly in TypeScript and Python, mostly bilingual Arabic/English, mostly on teams where the work has to survive contact with a real institution."},"profile_url":"https://github.com/nizarhazaymeh","login":"nizarhazaymeh","generated_at":"2026-09-08","repo_count":16,"team_repos":9,"largest_team":26,"first_project":"2025-10-29T10:02:03Z","languages":[{"name":"TypeScript","bytes":9401095,"share":55.53},{"name":"Python","bytes":4662093,"share":27.54},{"name":"JavaScript","bytes":1127708,"share":6.66},{"name":"HTML","bytes":609615,"share":3.6},{"name":"PLpgSQL","bytes":549275,"share":3.24},{"name":"CSS","bytes":360735,"share":2.13},{"name":"Shell","bytes":130586,"share":0.77},{"name":"PHP","bytes":22820,"share":0.13},{"name":"Dockerfile","bytes":15597,"share":0.09},{"name":"Jinja","bytes":12376,"share":0.07},{"name":"MDX","bytes":12251,"share":0.07},{"name":"PowerShell","bytes":8834,"share":0.05},{"name":"Roff","bytes":6659,"share":0.04},{"name":"Makefile","bytes":3758,"share":0.02},{"name":"Jupyter Notebook","bytes":2926,"share":0.02},{"name":"Lua","bytes":1550,"share":0.01},{"name":"Batchfile","bytes":1443,"share":0.01},{"name":"Go Template","bytes":544,"share":0.0},{"name":"Mako","bytes":164,"share":0.0},{"name":"Gherkin","bytes":133,"share":0.0},{"name":"Kotlin","bytes":124,"share":0.0},{"name":"Ruby","bytes":108,"share":0.0},{"name":"Swift","bytes":93,"share":0.0}],"tech":[{"group":"Languages","items":["TypeScript","Python","JavaScript","SQL / PLpgSQL","HTML/CSS"]},{"group":"Frontend","items":["React","Next.js","React Native / Expo","Tailwind CSS","Framer Motion","shadcn/ui","Vite"]},{"group":"Backend & data","items":["FastAPI","Microservices","PostgreSQL","Supabase","Row Level Security","SQLite","REST APIs"]},{"group":"AI & analytics","items":["LLM integration","NLP pipelines","Multi-agent systems","MCP","YOLO / computer vision","xarray","GeoPandas"]},{"group":"Platform","items":["Docker","pnpm monorepos","GitHub Actions","Playwright","pytest","Vercel"]},{"group":"Practice","items":["Bilingual Arabic / English UI","RTL layouts","RBAC & MFA","Accessibility","Technical documentation"]}],"projects":[{"display":"National Traffic Intelligence Platform","tagline":"The intelligence and action layer above a capital city's road network","body":"A platform that reads one unified picture of a metropolitan road network and proposes concrete interventions — signal retiming, a coordinated green wave, dispatching an officer, a variable message sign — rather than only reporting conditions. A TypeScript and Python monorepo over a PostgreSQL/PostGIS core, with computer-vision supervision of camera and drone feeds and traffic microsimulation behind the recommendations. Built for a government client.","stack":["TypeScript","Python","PostgreSQL/PLpgSQL","pnpm monorepo","Docker","Playwright"],"role":"Lead contributor","tier":1,"parts":[],"public_url":null,"access":"Client work · not public","contributors":5,"first":"2026-07-28T11:33:54Z","last":"2026-09-07T19:48:28Z","repo":null},{"display":"National Citizen-Experience Platform","tagline":"Citizen feedback, from intake to ministry-level intelligence","body":"A microservice platform carrying citizen feedback from intake through an NLP intelligence layer — archetypes, personas, root-cause analysis — into business-intelligence dashboards and citizen-facing channels. My work spanned front-end feature areas, a persona-generation interface, an interactive national situation-room map, and later hardening on the identity and access service. Built for a government client.","stack":["Python","TypeScript","Microservices","NLP","RBAC"],"role":"Core contributor","tier":1,"parts":[],"public_url":null,"access":"Client work · not public","contributors":26,"first":"2026-05-19T11:19:11Z","last":"2026-07-19T11:57:41Z","repo":null},{"display":"Options Alpha Agent","tagline":"An options agent that trades only when the premium beats the risk","body":"Built for the Alpaca AI Trading Agents Hackathon (lablab.ai × Alpaca). Rather than predicting direction, it asks whether a specific multi-leg options structure is priced better than the risk it carries — a question with a measurable answer. Unattended execution loop against Alpaca paper trading, with an MCP server for research and oversight.","stack":["Python","Alpaca API","MCP","LLM (GLM-5.2)"],"role":"Lead contributor","tier":2,"parts":[{"name":"the agent loop","note":"Unattended cycle: scan, propose, gate, submit"},{"name":"quality gate","note":"Refuses a structure whose premium does not beat its risk"},{"name":"backtest harness","note":"Walk-forward, fitted strictly on prior years"},{"name":"watcher","note":"Polls the broker and tags orders ours or external"},{"name":"dashboard","note":"Static submission page — no framework, no credentials"}],"public_url":"https://github.com/nizarhazaymeh/tradingbot","access":null,"contributors":3,"first":"2026-08-28T18:20:23Z","last":"2026-09-04T13:04:18Z","repo":"nizarhazaymeh/tradingbot"},{"display":"Course Builder & Player","tagline":"Moodle 5.x course semantics rebuilt from scratch","body":"A standalone course builder and player that reproduces how Moodle represents, gates, reuses and displays a course — a real availability tree, per-user completion feeding back into availability, and import of genuine Moodle .mbz backups — written by understanding the behaviour, not copying the code.","stack":["FastAPI","SQLite","React","TypeScript","Vite"],"role":"Contributor","tier":2,"parts":[{"name":"rule engine","note":"Recursive availability tree — six condition types, fail-closed"},{"name":"completion tracking","note":"Per-user completion feeding back into availability"},{"name":"Quiz & Exam Studio","note":"RAG pipeline: parse, chunk, retrieve, generate"},{"name":".mbz import","note":"Reads a real Moodle backup package"},{"name":"course player","note":"The student-facing side with live availability"}],"public_url":null,"access":"Private repository","contributors":5,"first":"2026-07-21T07:28:49Z","last":"2026-07-26T12:25:03Z","repo":null},{"display":"ReefShield Aqaba","tagline":"Rainfall and land-reanalysis pipeline for reef sediment forecasting","body":"Configuration-driven retrieval and processing of NASA GPM IMERG precipitation and Copernicus ERA5-Land reanalysis, for wadi-to-reef sediment forecasting in Aqaba. An event is described by a YAML file, never baked into a function.","stack":["Python","xarray","earthaccess","GeoPandas","pytest"],"role":"Contributor","tier":2,"parts":[{"name":"IMERG retrieval","note":"NASA GPM precipitation via earthaccess and Harmony"},{"name":"ERA5-Land","note":"Copernicus land reanalysis through the CDS API"},{"name":"event configs","note":"An event is a YAML file, never code"},{"name":"regression tests","note":"October 2016 as the worked case"}],"public_url":"https://github.com/mahdianagreh/AAA-Ocean-hackathon-","access":null,"contributors":6,"first":"2026-08-02T09:33:26Z","last":"2026-08-09T22:09:23Z","repo":"mahdianagreh/AAA-Ocean-hackathon-"},{"display":"Save Up","tagline":"B2B marketplace matching retail stores to the cheapest wholesaler","body":"A store scans a product barcode, the app finds the cheapest wholesaler carrying it, and places the order; wholesalers manage prices and receive orders in real time. One Expo codebase serving iOS, Android and web, with two role-based dashboards selected at login.","stack":["Expo / React Native","TypeScript","Supabase","Postgres RLS","TanStack Query"],"role":"Core contributor","tier":2,"parts":[{"name":"barcode scan","note":"Scan a product, find the cheapest wholesaler carrying it"},{"name":"wholesaler catalog","note":"Price management, manual or CSV upload"},{"name":"receipt OCR","note":"On-device scanning into store inventory"},{"name":"order flow","note":"Cart through to fulfilment, realtime both sides"},{"name":"two dashboards","note":"Store and wholesaler roles in one Expo codebase"}],"public_url":null,"access":"Private repository","contributors":2,"first":"2026-07-27T18:43:29Z","last":"2026-09-07T23:28:15Z","repo":null},{"display":"9XAI Fellowship","tagline":"Five months of fellowship work, documented twice a week","body":"The working record of the fellowship: a FastAPI content-management backend for the Government of Jordan, a seven-agent Ministerial Digital Twin on the Paperclip orchestration framework, YOLOv8 vehicle detection, and dashboard and persona tooling. Alongside the code, twice-weekly written check-ins covering five months of work — what shipped, what broke, and the measurements that sent an idea back rather than into production.","stack":["FastAPI","Paperclip agents","YOLOv8","Gemini / Gemma","RAG","Dash"],"role":"Sole developer","tier":3,"parts":[{"name":"Intelligent-Traffic-Light","note":"YOLOv8 vehicle detection and junction simulation — three iterations"},{"name":"paperclip","note":"The seven-agent Ministerial Digital Twin"},{"name":"CM_V_MINISTRY","note":"Ministry content-management build"},{"name":"commentanalysis","note":"AI comment moderation wired to the database"},{"name":"PersonaTask","note":"Persona generation, and a second pass in personatask-3"},{"name":"Dash Simulation","note":"Dashboard simulation, phased with its own progress reports"},{"name":"Calender-manager-main","note":"Calendar manager with execution-planner agents"},{"name":"Jordan Crisis Management","note":"Early crisis-simulation work"},{"name":"Jordan Vision Project","note":"Vision project build"},{"name":"Buildhackathon","note":"Hackathon build, with hackathon2 and hackathon3 alongside"},{"name":"jnpi","note":"JNPI project"},{"name":"Reflections","note":"28 twice-weekly check-ins and Sunday plans, April to September"},{"name":"reports","note":"Working reports and written write-ups"}],"public_url":null,"access":"Private repository","contributors":1,"first":"2026-04-14T09:17:04Z","last":"2026-09-04T09:33:46Z","repo":null},{"display":"JESER Academy","tagline":"Bilingual academy site, scaffold to production","body":"Next.js 16 with the App Router and Tailwind v4: a bilingual i18n foundation and shared UI kit, programme and audience pages, lead-submission API route, SEO metadata and sitemap, then a full rebrand from MASAR to JESER including a new mark and renamed design tokens.","stack":["Next.js 16","TypeScript","Tailwind v4","i18n","Vercel"],"role":"Sole developer","tier":3,"parts":[{"name":"i18n foundation","note":"Bilingual routing and a shared UI kit"},{"name":"programme pages","note":"Home, Programs and the four audience pages"},{"name":"lead capture","note":"Join Us and Contact on one submission API route"},{"name":"SEO","note":"Metadata, sitemap, robots and a localised 404"},{"name":"rebrand","note":"MASAR to JESER — new mark and renamed design tokens"}],"public_url":null,"access":"Private repository","contributors":1,"first":"2026-08-08T22:54:35Z","last":"2026-08-21T13:56:55Z","repo":null},{"display":"Nexora Solutions","tagline":"Agency site migrated from static HTML to React","body":"A services site for an IT, AI, security and consulting firm, migrated from a static HTML/CSS/JS build to React and TypeScript, with an animated hero built on Framer Motion and shadcn/ui primitives.","stack":["React 18","TypeScript","Vite","Tailwind","Framer Motion"],"role":"Sole developer","tier":3,"parts":[{"name":"React migration","note":"Moved off a static HTML/CSS/JS build"},{"name":"animated hero","note":"Background Paths built on Framer Motion"},{"name":"service pages","note":"IT, AI, security, audit, marketing, consulting"}],"public_url":"https://github.com/nizarhazaymeh/Nexora","access":null,"contributors":1,"first":"2026-05-15T14:34:59Z","last":"2026-06-12T18:34:47Z","repo":"nizarhazaymeh/Nexora"},{"display":"Hamlni · حملني","tagline":"On-demand roadside assistance for Jordan","body":"Two services in one bilingual Expo app: a mobile charging van with a generator driven to your electric car, or a tow truck for any car. Runs in Expo Go on a real phone, SDK pinned deliberately so it keeps doing so.","stack":["React Native","Expo","TypeScript","Arabic / English"],"role":"Sole developer","tier":3,"parts":[{"name":"EV charging","note":"Mobile charging van dispatched to an electric car"},{"name":"tow pickup","note":"Tow truck for any car, electric or petrol"},{"name":"tick engine","note":"Simulated fleet, so it demos with no backend"},{"name":"bilingual UI","note":"Direction-aware styles rather than forceRTL"}],"public_url":null,"access":"Private repository","contributors":1,"first":"2026-09-01T19:53:20Z","last":"2026-09-01T21:31:08Z","repo":null},{"display":"Jordan Crisis Management Engine","tagline":"Situation-room console for national infrastructure crises","body":"A stateful, weighted causal dependency graph across water security, public health, infrastructure, energy and telecom, propagating stress cascades over discrete ticks. Includes a decision hub ranking interventions against budget constraints and a multi-agent simulation swarm.","stack":["FastAPI","Python","Causal graph","Multi-agent","Bilingual RTL/LTR"],"role":"Contributor","tier":3,"parts":[{"name":"causal graph engine","note":"Weighted dependencies propagating stress over ticks"},{"name":"national cockpit","note":"Interactive Jordan map with live telemetry"},{"name":"decision hub","note":"Ranks interventions against budget constraints"},{"name":"AEGIS swarm","note":"Analyst, Commander, Critique, Verifier, Report agents"},{"name":"guardrails","note":"Input/output validation, hallucination and bias checks"}],"public_url":null,"access":"Private repository","contributors":5,"first":"2026-05-31T12:38:56Z","last":"2026-06-01T07:03:27Z","repo":null},{"display":"Maps","tagline":"Mapping interface with a tested chat component","body":"An early mapping interface; the substantive work is a refined ChatInput component with a full test suite.","stack":["JavaScript","CSS","HTML"],"role":"Sole developer","tier":4,"parts":[],"public_url":null,"access":"Private repository","contributors":1,"first":"2026-03-03T23:36:54Z","last":"2026-03-09T21:22:48Z","repo":null},{"display":"portfolio (contribution)","tagline":"Contributions to a teammate's Flask portfolio app","body":"Small contributions to a teammate's Flask-based portfolio application.","stack":["Python","Flask","HTML"],"role":"Contributor","tier":4,"parts":[],"public_url":"https://github.com/aboodhalabii/portfolio","access":null,"contributors":4,"first":"2025-10-29T10:02:03Z","last":"2025-10-29T10:42:55Z","repo":"aboodhalabii/portfolio"},{"display":"AI Content Management System","tagline":"Content management for the Government of Jordan","body":"An AI-assisted content management system scaffolded for Jordanian government communications work.","stack":["Python","JavaScript"],"role":"Sole developer","tier":4,"parts":[],"public_url":"https://github.com/nizarhazaymeh/content-managment-2","access":null,"contributors":1,"first":"2026-03-15T07:46:51Z","last":"2026-03-16T06:37:37Z","repo":"nizarhazaymeh/content-managment-2"},{"display":"3D","tagline":"Single contribution","body":"A single contribution to a teammate's 3D project.","stack":[],"role":"Contributor","tier":4,"parts":[],"public_url":null,"access":"Private repository","contributors":2,"first":"2026-05-08T20:30:44Z","last":"2026-05-08T20:30:44Z","repo":null},{"display":"Task Planner","tagline":"Early task-planning experiment","body":"An early standalone task-planning experiment.","stack":["Python"],"role":"Sole developer","tier":4,"parts":[],"public_url":"https://github.com/nizarhazaymeh/taskplaner","access":null,"contributors":1,"first":"2025-11-05T12:33:53Z","last":"2025-11-05T12:33:53Z","repo":"nizarhazaymeh/taskplaner"}]}}</script>
+<script>
+(function(){
+  "use strict";
+  var S = JSON.parse(document.getElementById("portfolio-data").textContent).stats;
+  var $ = function(id){ return document.getElementById(id); };
+  var esc = function(s){ var d=document.createElement("div"); d.textContent=s==null?"":s; return d.innerHTML; };
+  var MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var mlab = function(m){ var p=m.split("-"); return MON[+p[1]-1]+" "+p[0]; };
+  var mshort = function(m){ var p=m.split("-"); return MON[+p[1]-1]; };
+  var mnum = function(m){ var p=m.split("-"); return (+p[0])*12 + (+p[1]) - 1; };
+  var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- masthead ---------- */
+  $("name").textContent = S.profile.name;
+  $("role").textContent = S.profile.title + " · " + S.profile.location;
+  $("blurb").textContent = S.profile.blurb;
+  $("contact").innerHTML =
+      '<a class="clink" href="' + esc(S.profile_url) + '" rel="noreferrer noopener">'
+    +   '<span class="k">github</span>' + esc(S.login) + ' ↗</a>'
+    + '<a class="clink" href="mailto:' + esc(S.profile.email) + '">'
+    +   '<span class="k">email</span>' + esc(S.profile.email) + '</a>'
+    + '<button class="themebtn" id="theme" type="button">Theme</button>';
+
+  var cells = [
+    [S.repo_count, "Projects", true],
+    [S.team_repos, "Built with a team", true],
+    [S.largest_team, "Largest team", true],
+    [S.languages.filter(function(l){ return l.share >= 1; }).length, "Core languages", true],
+    [S.first_project.slice(0,4), "Building since", false]
+  ];
+  $("strip").innerHTML = cells.map(function(c,i){
+    return '<div class="cell reveal" style="--d:'+(400 + i*70)+'ms">'
+      + '<div class="v"'+(c[2] ? ' data-to="'+c[0]+'"' : '')+'>'
+      +   (c[2] ? "0" : c[0]) + '</div>'
+      + '<div class="k">'+c[1]+'</div></div>';
+  }).join("");
+
+  /* count the readout up once the strip has settled */
+  function countUp(){
+    var els = document.querySelectorAll(".cell .v[data-to]");
+    Array.prototype.forEach.call(els, function(el, i){
+      var to = +el.getAttribute("data-to");
+      if (still){ el.textContent = to; return; }
+      var t0 = null, dur = 700, delay = 420 + i * 70;
+      function step(ts){
+        if (t0 === null) t0 = ts;
+        var p = Math.min(1, (ts - t0) / dur);
+        var e = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(to * e);
+        if (p < 1) requestAnimationFrame(step);
+      }
+      setTimeout(function(){ requestAnimationFrame(step); }, delay);
+    });
+  }
+  countUp();
+
+  /* ---------- projects ---------- */
+  function roleTag(p){ return '<span class="tag role">'+esc(p.role)+'</span>'; }
+  function team(p){ return p.contributors === 1 ? "Solo" : "Team of " + p.contributors; }
+  function period(p){
+    var a = p.first.slice(0,7), b = p.last.slice(0,7);
+    return a === b ? mlab(a) : mlab(a) + " – " + mlab(b);
+  }
+  function fact(k,v){ return '<div class="fact"><dt>'+k+'</dt><dd>'+v+'</dd></div>'; }
+
+  var seq = 0;
+  /* A disclosure: a real button for keyboard and screen readers, wrapped in a
+     card that is also pressable anywhere for the mouse. */
+  function parts(p, noun){
+    if (!p.parts || !p.parts.length) return { cls:"", html:"" };
+    var id = "parts-" + (++seq);
+    return {
+      cls: " expandable",
+      html: '<button class="disclose" type="button" aria-expanded="false"'
+          +   ' aria-controls="' + id + '"><span class="chev">\u25B6</span>'
+          +   '<span class="dlabel">Show the ' + p.parts.length + ' ' + noun
+          +   ' inside</span></button>'
+          + '<div class="parts-wrap" id="' + id + '"><div class="parts-inner">'
+          +   '<div class="parts">'
+          +     p.parts.map(function(x){
+                  return '<div class="part"><span class="pn">' + esc(x.name)
+                       + '</span><span class="pd">' + esc(x.note) + '</span></div>';
+                }).join("")
+          +   '</div></div></div>'
+    };
+  }
+
+  var byTier = {1:[],2:[],3:[],4:[]};
+  S.projects.forEach(function(p){ byTier[p.tier].push(p); });
+
+  $("tier1").innerHTML = byTier[1].map(function(p){
+    var d = parts(p, "services");
+    return '<article class="flag'+d.cls+'">'
+      + '<div class="flag-top"><h3>'+esc(p.display)+'</h3>'+roleTag(p)+'</div>'
+      + '<p class="tagline">'+esc(p.tagline)+'</p>'
+      + '<div class="flag-grid"><div>'
+      +   '<p class="body">'+esc(p.body)+'</p>'
+      +   '<div class="stack">'+p.stack.map(function(s){return '<span class="chip">'+esc(s)+'</span>';}).join("")+'</div>'
+      + '</div><dl class="facts">'
+      +   fact("Role", esc(p.role))
+      +   fact("Team", team(p))
+      +   fact("Period", period(p))
+      +   (p.repo
+            ? fact("Repository", p.public_url
+                ? '<a href="'+esc(p.public_url)+'" rel="noreferrer noopener">'+esc(p.repo)+' \u2197</a>'
+                : esc(p.repo))
+            : fact("Access", esc(p.access || "Private")))
+      + '</dl></div>' + d.html + '</article>';
+  }).join("");
+
+  function card(p){
+    var d = parts(p, "parts");
+    return '<article class="proj'+d.cls+'">'
+      + '<h4 style="margin-bottom:2px">'+esc(p.display)+'</h4>'
+      + '<p class="tagline">'+esc(p.tagline)+'</p>'
+      + '<p>'+esc(p.body)+'</p>'
+      + '<div class="stack" style="margin-bottom:11px">'
+      +   p.stack.slice(0,5).map(function(s){return '<span class="chip">'+esc(s)+'</span>';}).join("")
+      + '</div>'
+      + '<div class="meta"><b>'+esc(p.role)+'</b><span>'+team(p)+'</span>'
+      +   '<span>'+period(p)+'</span>'
+      +   (p.public_url
+            ? '<a class="ghview" href="'+esc(p.public_url)+'" rel="noreferrer noopener">'
+              + 'View on GitHub \u2197</a>'
+            : (p.access ? '<span>'+esc(p.access)+'</span>' : ''))
+      + '</div>'
+      + d.html
+      + '</article>';
+  }
+  $("tier2").innerHTML = byTier[2].map(card).join("");
+  $("tier3").innerHTML = byTier[3].map(card).join("");
+  $("tier4").innerHTML = byTier[4].map(function(p){
+    return '<div class="mrow"><span class="nm">'+esc(p.display)+'</span>'
+      + '<span class="ct">'+esc(p.role)+' · '+period(p)+'</span></div>';
+  }).join("");
+
+  /* ---------- engagements timeline ---------- */
+  var TL = S.projects.filter(function(p){ return p.tier <= 3; }).slice()
+    .sort(function(a,b){
+      return mnum(a.first.slice(0,7)) - mnum(b.first.slice(0,7)) || a.tier - b.tier;
+    });
+  var lo = Math.min.apply(null, TL.map(function(p){ return mnum(p.first.slice(0,7)); }));
+  var hi = Math.max.apply(null, TL.map(function(p){ return mnum(p.last.slice(0,7)); }));
+  var cols = hi - lo + 1, months = [];
+  for (var i = 0; i < cols; i++){
+    var t = lo + i, y = Math.floor(t / 12), m = t % 12 + 1;
+    months.push(y + "-" + (m < 10 ? "0" + m : m));
+  }
+  $("gmonths").innerHTML = months.map(function(m){ return '<span>'+mshort(m)+'</span>'; }).join("");
+  var gridCells = months.map(function(){ return '<i></i>'; }).join("");
+
+  $("grows").innerHTML = TL.map(function(p, i){
+    var a = mnum(p.first.slice(0,7)) - lo, b = mnum(p.last.slice(0,7)) - lo;
+    var left = a / cols * 100, width = (b - a + 1) / cols * 100;
+    var lead = /Lead|Sole/.test(p.role) ? " lead" : "";
+    return '<div class="grow'+lead+'">'
+      + '<span class="gname" title="'+esc(p.display)+'">'+esc(p.display)+'</span>'
+      + '<div class="gtrack"><div class="grid">'+gridCells+'</div>'
+      + '<div class="gbar" style="left:'+left.toFixed(2)+'%;width:'+width.toFixed(2)
+      +   '%;--d:'+(120 + i*55)+'ms" title="'+esc(period(p))+'"></div></div></div>';
+  }).join("");
+
+  $("tlnote").textContent =
+    "The substantive work runs " + mlab(months[0]) + " to " + mlab(months[months.length-1])
+    + " — " + TL.length + " projects overlapping, most of them alongside the two platforms above. "
+    + "Bars span first to last contribution.";
+
+  /* ---------- languages & capabilities ---------- */
+  var L = S.languages.filter(function(l){ return l.share >= 0.5; }).slice(0, 7);
+  var lmax = L[0] ? L[0].share : 1;
+  $("langs").innerHTML = L.map(function(l, i){
+    return '<div class="lrow"><span class="lname">'+esc(l.name)+'</span>'
+      + '<span class="ltrack"><span class="lfill" style="width:'
+      + (l.share / lmax * 100).toFixed(1) + '%;--d:'+(140 + i*70)+'ms"></span></span>'
+      + '<span class="lpct">'+l.share.toFixed(0)+'%</span></div>';
+  }).join("");
+
+  $("caps").innerHTML = S.tech.map(function(g){
+    return '<div class="cap"><h4>'+esc(g.group)+'</h4><div class="stack">'
+      + g.items.map(function(t){ return '<span class="chip">'+esc(t)+'</span>'; }).join("")
+      + '</div></div>';
+  }).join("");
+
+  /* ---------- press to open ---------- */
+  document.addEventListener("click", function(e){
+    if (e.target.closest("a")) return;              /* let links be links */
+    var el = e.target.closest(".expandable");
+    if (!el) return;
+    var open = el.classList.toggle("is-open");
+    var btn = el.querySelector(".disclose");
+    var label = el.querySelector(".dlabel");
+    if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
+    if (label){
+      var n = el.querySelectorAll(".part").length;
+      label.textContent = open ? "Hide"
+        : "Show the " + n + " "
+          + (el.classList.contains("flag") ? "services" : "parts") + " inside";
+    }
+  });
+
+  /* ---------- theme ---------- */
+  var root = document.documentElement;
+  $("theme").addEventListener("click", function(){
+    var cur = root.getAttribute("data-theme");
+    if (!cur) cur = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    root.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+  });
+
+  /* ---------- footer ---------- */
+  $("footnote").textContent =
+    "Project roles describe standing within each repository — measured from contribution history — "
+    + "not job titles. Language shares weight each codebase by the proportion of it that is mine, "
+    + "so a large repository touched lightly does not distort the mix. Periods run from first to "
+    + "last contribution.";
+  $("gen").textContent = "Built " + S.generated_at;
+})();
+</script>
+</body>
+</html>
