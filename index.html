@@ -79,26 +79,100 @@ h1,h2,h3,h4{font-family:"Archivo",system-ui,-apple-system,sans-serif; text-wrap:
 @keyframes growx{from{transform:scaleX(0)} to{transform:scaleX(1)}}
 @keyframes sweep{from{background-position:120% 0} to{background-position:-20% 0}}
 
+@keyframes charup{from{transform:translateY(108%)} to{transform:none}}
+@keyframes pop{0%{opacity:0; transform:scale(0)} 60%{opacity:1; transform:scale(1.5)} 100%{opacity:1; transform:none}}
+@keyframes blink{50%{opacity:0}}
+@keyframes ticker{to{transform:translateX(-50%)}}
+@keyframes chipin{from{opacity:0; transform:translateY(8px) scale(.96)} to{opacity:1; transform:none}}
+
 .reveal{opacity:0; animation:rise .62s var(--ease) forwards; animation-delay:var(--d,0ms)}
 
-/* a single restrained flourish: the rule under the masthead draws itself in */
-.drawline{transform-origin:left; animation:growx .9s var(--ease) .35s both}
+/* scroll reveal: .sr is hidden until the observer marks it .in. The animation
+   fills backwards only, so once it ends hover transforms work normally. */
+.sr:not(.in){opacity:0}
+.sr.in{animation:rise .7s var(--ease) backwards; animation-delay:var(--d,0ms)}
+.sr-chips:not(.in) .chip,.sr:not(.in) .chip{opacity:0}
+.sr-chips.in .chip,.sr.in .chip{animation:chipin .46s var(--ease) backwards;
+  animation-delay:calc(var(--i,0) * 28ms + 120ms)}
+
+/* the rule under each section heading draws itself in */
+.drawline{transform-origin:left; transform:scaleX(0)}
+.in .drawline,.drawline.in{animation:growx .9s var(--ease) .2s both}
+
+.sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+  clip:rect(0,0,0,0); white-space:nowrap; border:0}
 
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   *{animation:none!important; transition:none!important}
-  .reveal,.drawline,.gbar,.lfill{opacity:1!important; transform:none!important}
+  .reveal,.drawline,.gbar,.lfill,.sr,.ch,.w,.sr-chips .chip,.flow,.mast h1 .dot{opacity:1!important; transform:none!important}
   .is-open .chev{transform:rotate(90deg)!important}
+  .caret,.gplay{display:none!important}
 }
 
+/* ============ scroll progress & section dock ============ */
+.progress{position:fixed; top:0; left:0; right:0; height:2px; z-index:60;
+  background:linear-gradient(90deg,var(--accent),var(--accent-ink));
+  transform-origin:left; transform:scaleX(0); pointer-events:none}
+.dock{position:fixed; top:0; left:0; right:0; z-index:50;
+  background:color-mix(in srgb,var(--surface) 84%,transparent);
+  -webkit-backdrop-filter:saturate(1.4) blur(12px); backdrop-filter:saturate(1.4) blur(12px);
+  border-bottom:1px solid var(--rule);
+  transform:translateY(-102%); transition:transform .45s var(--ease)}
+.dock.show{transform:none}
+.dock-in{display:flex; align-items:center; gap:28px; height:52px}
+.dock-id{font-family:"Archivo",sans-serif; font-weight:700; font-size:17px;
+  letter-spacing:-.02em; text-decoration:none}
+.dock-id .dot{color:var(--accent)}
+.dock-links{position:relative; display:flex; gap:4px; overflow-x:auto; scrollbar-width:none;
+  margin-left:auto}
+.dock-links::-webkit-scrollbar{display:none}
+.dock-links a{position:relative; z-index:1; font-family:"IBM Plex Mono",monospace;
+  font-size:11px; letter-spacing:.1em; text-transform:uppercase; text-decoration:none;
+  color:var(--muted); padding:7px 11px; border-radius:999px; white-space:nowrap;
+  transition:color .25s var(--ease)}
+.dock-links a:hover,.dock-links a.on{color:var(--accent-ink)}
+.dock-ind{position:absolute; top:0; height:100%; left:0; width:0; border-radius:999px;
+  background:var(--accent-soft); opacity:0;
+  transition:transform .45s var(--ease), width .45s var(--ease), opacity .3s var(--ease)}
+@media (max-width:520px){.dock-id{display:none} .dock-links{margin-left:0}}
+section{scroll-margin-top:60px}
+
+/* ============ theme switch: circular wipe ============ */
+::view-transition-old(root),::view-transition-new(root){animation:none; mix-blend-mode:normal}
+
 /* ============ masthead ============ */
-header.mast{border-bottom:1px solid var(--rule); background:var(--surface);
+header.mast{position:relative; overflow:hidden;
+  border-bottom:1px solid var(--rule); background:var(--surface);
   transition:background-color .4s var(--ease), border-color .4s var(--ease)}
+header.mast > .wrap{position:relative; z-index:1}
+/* the live network behind the masthead: faded out under the text column */
+.flow{position:absolute; inset:0; width:100%; height:100%; display:block; pointer-events:none;
+  opacity:0; animation:fade 1.6s var(--ease) .5s forwards;
+  -webkit-mask-image:linear-gradient(90deg,transparent 8%,rgba(0,0,0,.35) 42%,#000 72%);
+          mask-image:linear-gradient(90deg,transparent 8%,rgba(0,0,0,.35) 42%,#000 72%)}
+@media (max-width:760px){
+  .flow{-webkit-mask-image:linear-gradient(200deg,#000 0%,rgba(0,0,0,.12) 32%,transparent 55%);
+                mask-image:linear-gradient(200deg,#000 0%,rgba(0,0,0,.12) 32%,transparent 55%)}
+}
 .mast-in{display:flex; flex-wrap:wrap; gap:44px; align-items:flex-end; padding:56px 0 36px}
 .mast-id{flex:1 1 440px; min-width:0}
 .mast h1{font-size:clamp(40px,6.4vw,66px); font-weight:700; letter-spacing:-.03em;
   line-height:1.02; margin-bottom:14px}
-.mast h1 .dot{color:var(--accent)}
+.mast h1 .dot{color:var(--accent); display:inline-block; opacity:0;
+  animation:pop .6s var(--ease) forwards; animation-delay:var(--d,700ms)}
+/* name: each letter rises out of its word's clip box */
+.mast h1 .word{display:inline-block; overflow:hidden; vertical-align:bottom;
+  padding-bottom:.06em; margin-bottom:-.06em}
+.mast h1 .ch{display:inline-block; transform:translateY(108%);
+  animation:charup .78s var(--ease) forwards; animation-delay:var(--d,0ms)}
+.caret{display:inline-block; width:0; height:1.05em; vertical-align:-.16em;
+  border-left:2px solid var(--accent); margin-left:1px; animation:blink .9s steps(1) infinite;
+  transition:opacity .4s var(--ease)}
+.caret.gone{opacity:0; animation:none}
+.ghost{color:transparent}
+.blurb .w{display:inline-block; opacity:0; animation:rise .55s var(--ease) forwards;
+  animation-delay:var(--d,0ms)}
 .role{font-family:"Archivo",sans-serif; font-size:16px; font-weight:600;
   letter-spacing:.01em; color:var(--accent-ink); margin-bottom:20px}
 .blurb{max-width:62ch; color:var(--ink-2); font-size:19px; line-height:1.6; margin:0}
@@ -149,8 +223,32 @@ header.mast{border-bottom:1px solid var(--rule); background:var(--surface);
   .cell::after{left:0!important; width:100%!important}
 }
 
+/* ============ technology ticker ============ */
+.ticker{overflow:hidden; border-bottom:1px solid var(--rule); background:var(--surface-2);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent);
+          mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent);
+  transition:background-color .4s var(--ease), border-color .4s var(--ease)}
+.ticker-track{display:flex; width:max-content; padding:13px 0;
+  animation:ticker var(--dur,60s) linear infinite}
+.ticker:hover .ticker-track{animation-play-state:paused}
+.ticker-track span{font-family:"IBM Plex Mono",monospace; font-size:11.5px;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--muted); white-space:nowrap;
+  transition:color .2s var(--ease)}
+.ticker-track span:hover{color:var(--accent-ink)}
+.ticker-track span::after{content:"\25C6"; color:var(--accent); font-size:7px;
+  margin:0 24px; vertical-align:2px; opacity:.7}
+
+/* ============ cursor spotlight on cards ============ */
+.flag,.proj,.gantt{isolation:isolate}
+.flag::after,.proj::after,.gantt::after{
+  content:""; position:absolute; inset:0; z-index:-1; border-radius:5px; pointer-events:none;
+  background:radial-gradient(420px circle at var(--mx,50%) var(--my,50%),var(--glow),transparent 62%);
+  opacity:0; transition:opacity .35s var(--ease)}
+.flag:hover::after,.proj:hover::after,.gantt:hover::after{opacity:1}
+
 /* ============ sections ============ */
 section{padding:62px 0 6px}
+.sectitle{position:relative}
 .sectitle{font-size:26px; font-weight:700; letter-spacing:-.022em; margin:8px 0 10px}
 .secnote{color:var(--muted); font-size:15.5px; max-width:64ch; margin:0 0 28px}
 .rule{height:1px; background:var(--rule); margin:0 0 4px}
@@ -220,7 +318,7 @@ section{padding:62px 0 6px}
   white-space:nowrap}
 
 /* ============ engagements timeline ============ */
-.gantt{background:var(--surface); border:1px solid var(--rule); border-radius:4px;
+.gantt{position:relative; background:var(--surface); border:1px solid var(--rule); border-radius:4px;
   padding:24px 26px 18px; overflow-x:auto;
   transition:background-color .4s var(--ease), border-color .4s var(--ease)}
 .gtable{min-width:620px}
@@ -238,10 +336,21 @@ section{padding:62px 0 6px}
 .gbar{position:absolute; top:4px; height:12px; background:var(--mark);
   border-radius:4px; min-width:10px;
   transform:scaleX(0); transform-origin:left;
-  animation:growx .68s var(--ease) forwards; animation-delay:var(--d,0ms);
-  transition:background-color .22s var(--ease), box-shadow .22s var(--ease)}
+  transition:background-color .22s var(--ease), box-shadow .3s var(--ease)}
+.gantt.in .gbar{animation:growx .68s var(--ease) forwards; animation-delay:var(--d,0ms)}
 .grow.lead .gbar{background:var(--accent)}
-.grow:hover .gbar{background:var(--accent); box-shadow:0 0 0 4px var(--glow)}
+.grow:hover .gbar,.gbar.hot{background:var(--accent); box-shadow:0 0 0 4px var(--glow)}
+#grows{position:relative}
+/* playhead that sweeps the months once the bars have drawn */
+.gplay{position:absolute; top:-6px; bottom:-6px; width:2px; margin-left:-1px; z-index:2;
+  left:calc(238px + (100% - 238px) * var(--p,0)); pointer-events:none;
+  background:var(--accent); box-shadow:0 0 14px 2px var(--glow); border-radius:2px;
+  opacity:0; transition:opacity .4s var(--ease)}
+.gplay.on{opacity:1}
+.gplay::before{content:""; position:absolute; top:-4px; left:-4px; width:10px; height:10px;
+  border-radius:50%; background:var(--accent); box-shadow:0 0 0 4px var(--glow)}
+.gmonths span{transition:color .25s var(--ease)}
+.gmonths span.hot{color:var(--accent-ink)}
 .ghead{display:grid; grid-template-columns:220px 1fr; gap:18px; padding-bottom:8px;
   border-bottom:1px solid var(--rule); margin-bottom:4px}
 .gmonths{display:flex}
@@ -266,8 +375,8 @@ section{padding:62px 0 6px}
 .ltrack{height:9px; background:var(--rule-soft); border-radius:4px; overflow:hidden}
 .lfill{display:block; height:100%; background:var(--mark); border-radius:4px;
   transform:scaleX(0); transform-origin:left;
-  animation:growx .72s var(--ease) forwards; animation-delay:var(--d,0ms);
   transition:background-color .22s var(--ease)}
+.langs.in .lfill{animation:growx .9s var(--ease) forwards; animation-delay:var(--d,0ms)}
 .lrow:first-child .lfill{background:var(--accent)}
 .lrow:hover .lfill{background:var(--accent)}
 .lpct{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--muted);
@@ -321,20 +430,34 @@ footer{margin-top:70px; border-top:1px solid var(--rule); background:var(--surfa
 </head>
 <body>
 
-<header class="mast">
+<div class="progress" id="progress"></div>
+<nav class="dock" id="dock" aria-label="Sections">
+  <div class="wrap dock-in">
+    <a class="dock-id" id="dockid" href="#top"></a>
+    <div class="dock-links" id="docklinks">
+      <span class="dock-ind" id="dockind"></span>
+      <a href="#work">Work</a><a href="#shipped">Products</a><a href="#more">More</a><a href="#timeline">Timeline</a><a href="#skills">Skills</a>
+    </div>
+  </div>
+</nav>
+
+<header class="mast" id="top">
+  <canvas class="flow" id="flow" aria-hidden="true"></canvas>
   <div class="wrap">
     <div class="mast-in">
       <div class="mast-id">
         <p class="eyebrow reveal" style="--d:0ms; margin-bottom:15px">Engineering portfolio</p>
-        <h1 class="reveal" style="--d:70ms"><span id="name"></span><span class="dot">.</span></h1>
+        <h1><span id="name"></span><span class="dot">.</span></h1>
         <div class="role reveal" id="role" style="--d:150ms"></div>
-        <p class="blurb reveal" id="blurb" style="--d:230ms"></p>
+        <p class="blurb" id="blurb"></p>
       </div>
       <div class="contact reveal" id="contact" style="--d:330ms"></div>
     </div>
   </div>
   <div class="wrap"><div class="strip" id="strip"></div></div>
 </header>
+
+<div class="ticker" aria-hidden="true"><div class="ticker-track" id="ticker"></div></div>
 
 <main class="wrap">
 
@@ -397,7 +520,7 @@ footer{margin-top:70px; border-top:1px solid var(--rule); background:var(--surfa
   </div></div>
 </footer>
 
-<script type="application/json" id="portfolio-data">{"stats":{"profile":{"name":"Nizar Hazaymeh","title":"Full-Stack & AI Engineer","location":"Amman, Jordan","email":"nizar.hazaymeh@gmail.com","phone":"+962 79 061 8191","phone_href":"+962790618191","linkedin":"www.linkedin.com/in/nizar-hazaymeh-b692b5260","linkedin_label":"nizar-hazaymeh","blurb":"I build civic and government-scale platforms — traffic intelligence, citizen-experience analytics, crisis simulation — mostly in TypeScript and Python, mostly bilingual Arabic/English, mostly on teams where the work has to survive contact with a real institution."},"profile_url":"https://github.com/nizarhazaymeh","login":"nizarhazaymeh","generated_at":"2026-09-08","repo_count":16,"team_repos":9,"largest_team":26,"first_project":"2025-10-29T10:02:03Z","languages":[{"name":"TypeScript","bytes":9401095,"share":55.53},{"name":"Python","bytes":4662093,"share":27.54},{"name":"JavaScript","bytes":1127708,"share":6.66},{"name":"HTML","bytes":609615,"share":3.6},{"name":"PLpgSQL","bytes":549275,"share":3.24},{"name":"CSS","bytes":360735,"share":2.13},{"name":"Shell","bytes":130586,"share":0.77},{"name":"PHP","bytes":22820,"share":0.13},{"name":"Dockerfile","bytes":15597,"share":0.09},{"name":"Jinja","bytes":12376,"share":0.07},{"name":"MDX","bytes":12251,"share":0.07},{"name":"PowerShell","bytes":8834,"share":0.05},{"name":"Roff","bytes":6659,"share":0.04},{"name":"Makefile","bytes":3758,"share":0.02},{"name":"Jupyter Notebook","bytes":2926,"share":0.02},{"name":"Lua","bytes":1550,"share":0.01},{"name":"Batchfile","bytes":1443,"share":0.01},{"name":"Go Template","bytes":544,"share":0.0},{"name":"Mako","bytes":164,"share":0.0},{"name":"Gherkin","bytes":133,"share":0.0},{"name":"Kotlin","bytes":124,"share":0.0},{"name":"Ruby","bytes":108,"share":0.0},{"name":"Swift","bytes":93,"share":0.0}],"tech":[{"group":"Languages","items":["TypeScript","Python","JavaScript","SQL / PLpgSQL","HTML/CSS"]},{"group":"Frontend","items":["React","Next.js","React Native / Expo","Tailwind CSS","Framer Motion","shadcn/ui","Vite"]},{"group":"Backend & data","items":["FastAPI","Microservices","PostgreSQL","Supabase","Row Level Security","SQLite","REST APIs"]},{"group":"AI & analytics","items":["LLM integration","NLP pipelines","Multi-agent systems","MCP","YOLO / computer vision","xarray","GeoPandas"]},{"group":"Platform","items":["Docker","pnpm monorepos","GitHub Actions","Playwright","pytest","Vercel"]},{"group":"Practice","items":["Bilingual Arabic / English UI","RTL layouts","RBAC & MFA","Accessibility","Technical documentation"]}],"projects":[{"display":"RASED · راصد","tagline":"Traffic intelligence and action layer for Amman","body":"Reads one unified picture of the road network and proposes a concrete intervention — signal retiming, a coordinated green wave, an officer, a variable message sign — rather than only reporting conditions.","stack":["TypeScript","Python","PostgreSQL/PLpgSQL","pnpm monorepo","Docker","Playwright"],"role":"Lead contributor","tier":1,"parts":[],"public_url":null,"access":"Client work · not public","contributors":5,"first":"2026-07-28T11:33:54Z","last":"2026-09-07T19:48:28Z","repo":null},{"display":"VoC-360","tagline":"Jordan's national citizen-experience intelligence platform","body":"Carries citizen feedback from intake through an NLP intelligence layer into business-intelligence dashboards and citizen-facing channels.","stack":["Python","TypeScript","Microservices","NLP","RBAC"],"role":"Core contributor","tier":1,"parts":[],"public_url":null,"access":"Client work · not public","contributors":26,"first":"2026-05-19T11:19:11Z","last":"2026-07-19T11:57:41Z","repo":null},{"display":"Options Alpha Agent","tagline":"An options agent that trades only when the premium beats the risk","body":"Built for the Alpaca AI Trading Agents Hackathon (lablab.ai × Alpaca). Rather than predicting direction, it asks whether a specific multi-leg options structure is priced better than the risk it carries — a question with a measurable answer. Unattended execution loop against Alpaca paper trading, with an MCP server for research and oversight.","stack":["Python","Alpaca API","MCP","LLM (GLM-5.2)"],"role":"Lead contributor","tier":2,"parts":[{"name":"the agent loop","note":"Unattended cycle: scan, propose, gate, submit"},{"name":"quality gate","note":"Refuses a structure whose premium does not beat its risk"},{"name":"backtest harness","note":"Walk-forward, fitted strictly on prior years"},{"name":"watcher","note":"Polls the broker and tags orders ours or external"},{"name":"dashboard","note":"Static submission page — no framework, no credentials"}],"public_url":"https://github.com/nizarhazaymeh/tradingbot","access":null,"contributors":3,"first":"2026-08-28T18:20:23Z","last":"2026-09-04T13:04:18Z","repo":"nizarhazaymeh/tradingbot"},{"display":"Course Builder & Player","tagline":"Moodle 5.x course semantics rebuilt from scratch","body":"A standalone course builder and player that reproduces how Moodle represents, gates, reuses and displays a course — a real availability tree, per-user completion feeding back into availability, and import of genuine Moodle .mbz backups — written by understanding the behaviour, not copying the code.","stack":["FastAPI","SQLite","React","TypeScript","Vite"],"role":"Contributor","tier":2,"parts":[{"name":"rule engine","note":"Recursive availability tree — six condition types, fail-closed"},{"name":"completion tracking","note":"Per-user completion feeding back into availability"},{"name":"Quiz & Exam Studio","note":"RAG pipeline: parse, chunk, retrieve, generate"},{"name":".mbz import","note":"Reads a real Moodle backup package"},{"name":"course player","note":"The student-facing side with live availability"}],"public_url":null,"access":"Private repository","contributors":5,"first":"2026-07-21T07:28:49Z","last":"2026-07-26T12:25:03Z","repo":null},{"display":"ReefShield Aqaba","tagline":"Rainfall and land-reanalysis pipeline for reef sediment forecasting","body":"Configuration-driven retrieval and processing of NASA GPM IMERG precipitation and Copernicus ERA5-Land reanalysis, for wadi-to-reef sediment forecasting in Aqaba. An event is described by a YAML file, never baked into a function.","stack":["Python","xarray","earthaccess","GeoPandas","pytest"],"role":"Contributor","tier":2,"parts":[{"name":"IMERG retrieval","note":"NASA GPM precipitation via earthaccess and Harmony"},{"name":"ERA5-Land","note":"Copernicus land reanalysis through the CDS API"},{"name":"event configs","note":"An event is a YAML file, never code"},{"name":"regression tests","note":"October 2016 as the worked case"}],"public_url":"https://github.com/mahdianagreh/AAA-Ocean-hackathon-","access":null,"contributors":6,"first":"2026-08-02T09:33:26Z","last":"2026-08-09T22:09:23Z","repo":"mahdianagreh/AAA-Ocean-hackathon-"},{"display":"Save Up","tagline":"B2B marketplace matching retail stores to the cheapest wholesaler","body":"A store scans a product barcode, the app finds the cheapest wholesaler carrying it, and places the order; wholesalers manage prices and receive orders in real time. One Expo codebase serving iOS, Android and web, with two role-based dashboards selected at login.","stack":["Expo / React Native","TypeScript","Supabase","Postgres RLS","TanStack Query"],"role":"Core contributor","tier":2,"parts":[{"name":"barcode scan","note":"Scan a product, find the cheapest wholesaler carrying it"},{"name":"wholesaler catalog","note":"Price management, manual or CSV upload"},{"name":"receipt OCR","note":"On-device scanning into store inventory"},{"name":"order flow","note":"Cart through to fulfilment, realtime both sides"},{"name":"two dashboards","note":"Store and wholesaler roles in one Expo codebase"}],"public_url":null,"access":"Private repository","contributors":2,"first":"2026-07-27T18:43:29Z","last":"2026-09-07T23:28:15Z","repo":null},{"display":"9XAI Fellowship","tagline":"Five months of fellowship work, documented twice a week","body":"The working record of the fellowship: a FastAPI content-management backend for the Government of Jordan, a seven-agent Ministerial Digital Twin on the Paperclip orchestration framework, YOLOv8 vehicle detection, and dashboard and persona tooling. Alongside the code, twice-weekly written check-ins covering five months of work — what shipped, what broke, and the measurements that sent an idea back rather than into production.","stack":["FastAPI","Paperclip agents","YOLOv8","Gemini / Gemma","RAG","Dash"],"role":"Sole developer","tier":3,"parts":[{"name":"Intelligent-Traffic-Light","note":"YOLOv8 vehicle detection and junction simulation — three iterations"},{"name":"paperclip","note":"The seven-agent Ministerial Digital Twin"},{"name":"CM_V_MINISTRY","note":"Ministry content-management build"},{"name":"commentanalysis","note":"AI comment moderation wired to the database"},{"name":"PersonaTask","note":"Persona generation, and a second pass in personatask-3"},{"name":"Dash Simulation","note":"Dashboard simulation, phased with its own progress reports"},{"name":"Calender-manager-main","note":"Calendar manager with execution-planner agents"},{"name":"Jordan Crisis Management","note":"Early crisis-simulation work"},{"name":"Jordan Vision Project","note":"Vision project build"},{"name":"Buildhackathon","note":"Hackathon build, with hackathon2 and hackathon3 alongside"},{"name":"jnpi","note":"JNPI project"},{"name":"Reflections","note":"28 twice-weekly check-ins and Sunday plans, April to September"},{"name":"reports","note":"Working reports and written write-ups"}],"public_url":null,"access":"Private repository","contributors":1,"first":"2026-04-14T09:17:04Z","last":"2026-09-04T09:33:46Z","repo":null},{"display":"JESER Academy","tagline":"Bilingual academy site, scaffold to production","body":"Next.js 16 with the App Router and Tailwind v4: a bilingual i18n foundation and shared UI kit, programme and audience pages, lead-submission API route, SEO metadata and sitemap, then a full rebrand from MASAR to JESER including a new mark and renamed design tokens.","stack":["Next.js 16","TypeScript","Tailwind v4","i18n","Vercel"],"role":"Sole developer","tier":3,"parts":[{"name":"i18n foundation","note":"Bilingual routing and a shared UI kit"},{"name":"programme pages","note":"Home, Programs and the four audience pages"},{"name":"lead capture","note":"Join Us and Contact on one submission API route"},{"name":"SEO","note":"Metadata, sitemap, robots and a localised 404"},{"name":"rebrand","note":"MASAR to JESER — new mark and renamed design tokens"}],"public_url":null,"access":"Private repository","contributors":1,"first":"2026-08-08T22:54:35Z","last":"2026-08-21T13:56:55Z","repo":null},{"display":"Nexora Solutions","tagline":"Agency site migrated from static HTML to React","body":"A services site for an IT, AI, security and consulting firm, migrated from a static HTML/CSS/JS build to React and TypeScript, with an animated hero built on Framer Motion and shadcn/ui primitives.","stack":["React 18","TypeScript","Vite","Tailwind","Framer Motion"],"role":"Sole developer","tier":3,"parts":[{"name":"React migration","note":"Moved off a static HTML/CSS/JS build"},{"name":"animated hero","note":"Background Paths built on Framer Motion"},{"name":"service pages","note":"IT, AI, security, audit, marketing, consulting"}],"public_url":"https://github.com/nizarhazaymeh/Nexora","access":null,"contributors":1,"first":"2026-05-15T14:34:59Z","last":"2026-06-12T18:34:47Z","repo":"nizarhazaymeh/Nexora"},{"display":"Hamlni · حملني","tagline":"On-demand roadside assistance for Jordan","body":"Two services in one bilingual Expo app: a mobile charging van with a generator driven to your electric car, or a tow truck for any car. Runs in Expo Go on a real phone, SDK pinned deliberately so it keeps doing so.","stack":["React Native","Expo","TypeScript","Arabic / English"],"role":"Sole developer","tier":3,"parts":[{"name":"EV charging","note":"Mobile charging van dispatched to an electric car"},{"name":"tow pickup","note":"Tow truck for any car, electric or petrol"},{"name":"tick engine","note":"Simulated fleet, so it demos with no backend"},{"name":"bilingual UI","note":"Direction-aware styles rather than forceRTL"}],"public_url":null,"access":"Private repository","contributors":1,"first":"2026-09-01T19:53:20Z","last":"2026-09-01T21:31:08Z","repo":null},{"display":"Jordan Crisis Management Engine","tagline":"Situation-room console for national infrastructure crises","body":"A stateful, weighted causal dependency graph across water security, public health, infrastructure, energy and telecom, propagating stress cascades over discrete ticks. Includes a decision hub ranking interventions against budget constraints and a multi-agent simulation swarm.","stack":["FastAPI","Python","Causal graph","Multi-agent","Bilingual RTL/LTR"],"role":"Contributor","tier":3,"parts":[{"name":"causal graph engine","note":"Weighted dependencies propagating stress over ticks"},{"name":"national cockpit","note":"Interactive Jordan map with live telemetry"},{"name":"decision hub","note":"Ranks interventions against budget constraints"},{"name":"AEGIS swarm","note":"Analyst, Commander, Critique, Verifier, Report agents"},{"name":"guardrails","note":"Input/output validation, hallucination and bias checks"}],"public_url":null,"access":"Private repository","contributors":5,"first":"2026-05-31T12:38:56Z","last":"2026-06-01T07:03:27Z","repo":null},{"display":"Maps","tagline":"Mapping interface with a tested chat component","body":"An early mapping interface; the substantive work is a refined ChatInput component with a full test suite.","stack":["JavaScript","CSS","HTML"],"role":"Sole developer","tier":4,"parts":[],"public_url":null,"access":"Private repository","contributors":1,"first":"2026-03-03T23:36:54Z","last":"2026-03-09T21:22:48Z","repo":null},{"display":"portfolio (contribution)","tagline":"Contributions to a teammate's Flask portfolio app","body":"Small contributions to a teammate's Flask-based portfolio application.","stack":["Python","Flask","HTML"],"role":"Contributor","tier":4,"parts":[],"public_url":"https://github.com/aboodhalabii/portfolio","access":null,"contributors":4,"first":"2025-10-29T10:02:03Z","last":"2025-10-29T10:42:55Z","repo":"aboodhalabii/portfolio"},{"display":"AI Content Management System","tagline":"Content management for the Government of Jordan","body":"An AI-assisted content management system scaffolded for Jordanian government communications work.","stack":["Python","JavaScript"],"role":"Sole developer","tier":4,"parts":[],"public_url":"https://github.com/nizarhazaymeh/content-managment-2","access":null,"contributors":1,"first":"2026-03-15T07:46:51Z","last":"2026-03-16T06:37:37Z","repo":"nizarhazaymeh/content-managment-2"},{"display":"3D","tagline":"Single contribution","body":"A single contribution to a teammate's 3D project.","stack":[],"role":"Contributor","tier":4,"parts":[],"public_url":null,"access":"Private repository","contributors":2,"first":"2026-05-08T20:30:44Z","last":"2026-05-08T20:30:44Z","repo":null},{"display":"Task Planner","tagline":"Early task-planning experiment","body":"An early standalone task-planning experiment.","stack":["Python"],"role":"Sole developer","tier":4,"parts":[],"public_url":"https://github.com/nizarhazaymeh/taskplaner","access":null,"contributors":1,"first":"2025-11-05T12:33:53Z","last":"2025-11-05T12:33:53Z","repo":"nizarhazaymeh/taskplaner"}]}}</script>
+<script type="application/json" id="portfolio-data">{"stats":{"profile":{"name":"Nizar Hazaymeh","title":"Full-Stack & AI Engineer","location":"Amman, Jordan","email":"nizar.hazaymeh@gmail.com","phone":"+962 79 061 8191","phone_href":"+962790618191","linkedin":"www.linkedin.com/in/nizar-hazaymeh-b692b5260","linkedin_label":"nizar-hazaymeh","blurb":"I build civic and government-scale platforms — traffic intelligence, citizen-experience analytics, crisis simulation — mostly in TypeScript and Python, mostly bilingual Arabic/English, mostly on teams where the work has to survive contact with a real institution."},"profile_url":"https://github.com/nizarhazaymeh","login":"nizarhazaymeh","generated_at":"2026-10-23","repo_count":16,"team_repos":9,"largest_team":26,"first_project":"2025-10-29T10:02:03Z","languages":[{"name":"TypeScript","bytes":9401095,"share":55.53},{"name":"Python","bytes":4662093,"share":27.54},{"name":"JavaScript","bytes":1127708,"share":6.66},{"name":"HTML","bytes":609615,"share":3.6},{"name":"PLpgSQL","bytes":549275,"share":3.24},{"name":"CSS","bytes":360735,"share":2.13},{"name":"Shell","bytes":130586,"share":0.77},{"name":"PHP","bytes":22820,"share":0.13},{"name":"Dockerfile","bytes":15597,"share":0.09},{"name":"Jinja","bytes":12376,"share":0.07},{"name":"MDX","bytes":12251,"share":0.07},{"name":"PowerShell","bytes":8834,"share":0.05},{"name":"Roff","bytes":6659,"share":0.04},{"name":"Makefile","bytes":3758,"share":0.02},{"name":"Jupyter Notebook","bytes":2926,"share":0.02},{"name":"Lua","bytes":1550,"share":0.01},{"name":"Batchfile","bytes":1443,"share":0.01},{"name":"Go Template","bytes":544,"share":0.0},{"name":"Mako","bytes":164,"share":0.0},{"name":"Gherkin","bytes":133,"share":0.0},{"name":"Kotlin","bytes":124,"share":0.0},{"name":"Ruby","bytes":108,"share":0.0},{"name":"Swift","bytes":93,"share":0.0}],"tech":[{"group":"Languages","items":["TypeScript","Python","JavaScript","SQL / PLpgSQL","HTML/CSS"]},{"group":"Frontend","items":["React","Next.js","React Native / Expo","Tailwind CSS","Framer Motion","shadcn/ui","Vite"]},{"group":"Backend & data","items":["FastAPI","Microservices","PostgreSQL","Supabase","Row Level Security","SQLite","REST APIs"]},{"group":"AI & analytics","items":["LLM integration","NLP pipelines","Multi-agent systems","MCP","YOLO / computer vision","xarray","GeoPandas"]},{"group":"Platform","items":["Docker","pnpm monorepos","GitHub Actions","Playwright","pytest","Vercel"]},{"group":"Practice","items":["Bilingual Arabic / English UI","RTL layouts","RBAC & MFA","Accessibility","Technical documentation"]}],"projects":[{"display":"RASED · راصد","tagline":"Traffic intelligence and action layer for Amman","body":"Reads one unified picture of the road network and proposes a concrete intervention — signal retiming, a coordinated green wave, an officer, a variable message sign — rather than only reporting conditions.","stack":["TypeScript","Python","PostgreSQL/PLpgSQL","pnpm monorepo","Docker","Playwright"],"role":"Lead contributor","tier":1,"parts":[],"public_url":null,"access":"Client work · not public","contributors":5,"first":"2026-07-28T11:33:54Z","last":"2026-09-07T19:48:28Z","repo":null},{"display":"VoC-360","tagline":"Jordan's national citizen-experience intelligence platform","body":"Carries citizen feedback from intake through an NLP intelligence layer into business-intelligence dashboards and citizen-facing channels.","stack":["Python","TypeScript","Microservices","NLP","RBAC"],"role":"Core contributor","tier":1,"parts":[],"public_url":null,"access":"Client work · not public","contributors":26,"first":"2026-05-19T11:19:11Z","last":"2026-07-19T11:57:41Z","repo":null},{"display":"Options Alpha Agent","tagline":"An options agent that trades only when the premium beats the risk","body":"Built for the Alpaca AI Trading Agents Hackathon (lablab.ai × Alpaca). Rather than predicting direction, it asks whether a specific multi-leg options structure is priced better than the risk it carries — a question with a measurable answer. Unattended execution loop against Alpaca paper trading, with an MCP server for research and oversight.","stack":["Python","Alpaca API","MCP","LLM (GLM-5.2)"],"role":"Lead contributor","tier":2,"parts":[{"name":"the agent loop","note":"Unattended cycle: scan, propose, gate, submit"},{"name":"quality gate","note":"Refuses a structure whose premium does not beat its risk"},{"name":"backtest harness","note":"Walk-forward, fitted strictly on prior years"},{"name":"watcher","note":"Polls the broker and tags orders ours or external"},{"name":"dashboard","note":"Static submission page — no framework, no credentials"}],"public_url":"https://github.com/nizarhazaymeh/tradingbot","access":null,"contributors":3,"first":"2026-08-28T18:20:23Z","last":"2026-09-04T13:04:18Z","repo":"nizarhazaymeh/tradingbot"},{"display":"Course Builder & Player","tagline":"Moodle 5.x course semantics rebuilt from scratch","body":"A standalone course builder and player that reproduces how Moodle represents, gates, reuses and displays a course — a real availability tree, per-user completion feeding back into availability, and import of genuine Moodle .mbz backups — written by understanding the behaviour, not copying the code.","stack":["FastAPI","SQLite","React","TypeScript","Vite"],"role":"Contributor","tier":2,"parts":[{"name":"rule engine","note":"Recursive availability tree — six condition types, fail-closed"},{"name":"completion tracking","note":"Per-user completion feeding back into availability"},{"name":"Quiz & Exam Studio","note":"RAG pipeline: parse, chunk, retrieve, generate"},{"name":".mbz import","note":"Reads a real Moodle backup package"},{"name":"course player","note":"The student-facing side with live availability"}],"public_url":null,"access":"Private repository","contributors":5,"first":"2026-07-21T07:28:49Z","last":"2026-07-26T12:25:03Z","repo":null},{"display":"ReefShield Aqaba","tagline":"Rainfall and land-reanalysis pipeline for reef sediment forecasting","body":"Configuration-driven retrieval and processing of NASA GPM IMERG precipitation and Copernicus ERA5-Land reanalysis, for wadi-to-reef sediment forecasting in Aqaba. An event is described by a YAML file, never baked into a function.","stack":["Python","xarray","earthaccess","GeoPandas","pytest"],"role":"Contributor","tier":2,"parts":[{"name":"IMERG retrieval","note":"NASA GPM precipitation via earthaccess and Harmony"},{"name":"ERA5-Land","note":"Copernicus land reanalysis through the CDS API"},{"name":"event configs","note":"An event is a YAML file, never code"},{"name":"regression tests","note":"October 2016 as the worked case"}],"public_url":"https://github.com/mahdianagreh/AAA-Ocean-hackathon-","access":null,"contributors":6,"first":"2026-08-02T09:33:26Z","last":"2026-08-09T22:09:23Z","repo":"mahdianagreh/AAA-Ocean-hackathon-"},{"display":"Save Up","tagline":"B2B marketplace matching retail stores to the cheapest wholesaler","body":"A store scans a product barcode, the app finds the cheapest wholesaler carrying it, and places the order; wholesalers manage prices and receive orders in real time. One Expo codebase serving iOS, Android and web, with two role-based dashboards selected at login.","stack":["Expo / React Native","TypeScript","Supabase","Postgres RLS","TanStack Query"],"role":"Core contributor","tier":2,"parts":[{"name":"barcode scan","note":"Scan a product, find the cheapest wholesaler carrying it"},{"name":"wholesaler catalog","note":"Price management, manual or CSV upload"},{"name":"receipt OCR","note":"On-device scanning into store inventory"},{"name":"order flow","note":"Cart through to fulfilment, realtime both sides"},{"name":"two dashboards","note":"Store and wholesaler roles in one Expo codebase"}],"public_url":null,"access":"Private repository","contributors":2,"first":"2026-07-27T18:43:29Z","last":"2026-09-07T23:28:15Z","repo":null},{"display":"9XAI Fellowship","tagline":"Five months of fellowship work, documented twice a week","body":"The working record of the fellowship: a FastAPI content-management backend for the Government of Jordan, a seven-agent Ministerial Digital Twin on the Paperclip orchestration framework, YOLOv8 vehicle detection, and dashboard and persona tooling. Alongside the code, twice-weekly written check-ins covering five months of work — what shipped, what broke, and the measurements that sent an idea back rather than into production.","stack":["FastAPI","Paperclip agents","YOLOv8","Gemini / Gemma","RAG","Dash"],"role":"Sole developer","tier":3,"parts":[{"name":"Intelligent-Traffic-Light","note":"YOLOv8 vehicle detection and junction simulation — three iterations"},{"name":"paperclip","note":"The seven-agent Ministerial Digital Twin"},{"name":"CM_V_MINISTRY","note":"Ministry content-management build"},{"name":"commentanalysis","note":"AI comment moderation wired to the database"},{"name":"PersonaTask","note":"Persona generation, and a second pass in personatask-3"},{"name":"Dash Simulation","note":"Dashboard simulation, phased with its own progress reports"},{"name":"Calender-manager-main","note":"Calendar manager with execution-planner agents"},{"name":"Jordan Crisis Management","note":"Early crisis-simulation work"},{"name":"Jordan Vision Project","note":"Vision project build"},{"name":"Buildhackathon","note":"Hackathon build, with hackathon2 and hackathon3 alongside"},{"name":"jnpi","note":"JNPI project"},{"name":"Reflections","note":"28 twice-weekly check-ins and Sunday plans, April to September"},{"name":"reports","note":"Working reports and written write-ups"}],"public_url":null,"access":"Private repository","contributors":1,"first":"2026-04-14T09:17:04Z","last":"2026-09-04T09:33:46Z","repo":null},{"display":"JESER Academy","tagline":"Bilingual academy site, scaffold to production","body":"Next.js 16 with the App Router and Tailwind v4: a bilingual i18n foundation and shared UI kit, programme and audience pages, lead-submission API route, SEO metadata and sitemap, then a full rebrand from MASAR to JESER including a new mark and renamed design tokens.","stack":["Next.js 16","TypeScript","Tailwind v4","i18n","Vercel"],"role":"Sole developer","tier":3,"parts":[{"name":"i18n foundation","note":"Bilingual routing and a shared UI kit"},{"name":"programme pages","note":"Home, Programs and the four audience pages"},{"name":"lead capture","note":"Join Us and Contact on one submission API route"},{"name":"SEO","note":"Metadata, sitemap, robots and a localised 404"},{"name":"rebrand","note":"MASAR to JESER — new mark and renamed design tokens"}],"public_url":null,"access":"Private repository","contributors":1,"first":"2026-08-08T22:54:35Z","last":"2026-08-21T13:56:55Z","repo":null},{"display":"Nexora Solutions","tagline":"Agency site migrated from static HTML to React","body":"A services site for an IT, AI, security and consulting firm, migrated from a static HTML/CSS/JS build to React and TypeScript, with an animated hero built on Framer Motion and shadcn/ui primitives.","stack":["React 18","TypeScript","Vite","Tailwind","Framer Motion"],"role":"Sole developer","tier":3,"parts":[{"name":"React migration","note":"Moved off a static HTML/CSS/JS build"},{"name":"animated hero","note":"Background Paths built on Framer Motion"},{"name":"service pages","note":"IT, AI, security, audit, marketing, consulting"}],"public_url":"https://github.com/nizarhazaymeh/Nexora","access":null,"contributors":1,"first":"2026-05-15T14:34:59Z","last":"2026-06-12T18:34:47Z","repo":"nizarhazaymeh/Nexora"},{"display":"Hamlni · حملني","tagline":"On-demand roadside assistance for Jordan","body":"Two services in one bilingual Expo app: a mobile charging van with a generator driven to your electric car, or a tow truck for any car. Runs in Expo Go on a real phone, SDK pinned deliberately so it keeps doing so.","stack":["React Native","Expo","TypeScript","Arabic / English"],"role":"Sole developer","tier":3,"parts":[{"name":"EV charging","note":"Mobile charging van dispatched to an electric car"},{"name":"tow pickup","note":"Tow truck for any car, electric or petrol"},{"name":"tick engine","note":"Simulated fleet, so it demos with no backend"},{"name":"bilingual UI","note":"Direction-aware styles rather than forceRTL"}],"public_url":null,"access":"Private repository","contributors":1,"first":"2026-09-01T19:53:20Z","last":"2026-09-01T21:31:08Z","repo":null},{"display":"Jordan Crisis Management Engine","tagline":"Situation-room console for national infrastructure crises","body":"A stateful, weighted causal dependency graph across water security, public health, infrastructure, energy and telecom, propagating stress cascades over discrete ticks. Includes a decision hub ranking interventions against budget constraints and a multi-agent simulation swarm.","stack":["FastAPI","Python","Causal graph","Multi-agent","Bilingual RTL/LTR"],"role":"Contributor","tier":3,"parts":[{"name":"causal graph engine","note":"Weighted dependencies propagating stress over ticks"},{"name":"national cockpit","note":"Interactive Jordan map with live telemetry"},{"name":"decision hub","note":"Ranks interventions against budget constraints"},{"name":"AEGIS swarm","note":"Analyst, Commander, Critique, Verifier, Report agents"},{"name":"guardrails","note":"Input/output validation, hallucination and bias checks"}],"public_url":null,"access":"Private repository","contributors":5,"first":"2026-05-31T12:38:56Z","last":"2026-06-01T07:03:27Z","repo":null},{"display":"Maps","tagline":"Mapping interface with a tested chat component","body":"An early mapping interface; the substantive work is a refined ChatInput component with a full test suite.","stack":["JavaScript","CSS","HTML"],"role":"Sole developer","tier":4,"parts":[],"public_url":null,"access":"Private repository","contributors":1,"first":"2026-03-03T23:36:54Z","last":"2026-03-09T21:22:48Z","repo":null},{"display":"portfolio (contribution)","tagline":"Contributions to a teammate's Flask portfolio app","body":"Small contributions to a teammate's Flask-based portfolio application.","stack":["Python","Flask","HTML"],"role":"Contributor","tier":4,"parts":[],"public_url":"https://github.com/aboodhalabii/portfolio","access":null,"contributors":4,"first":"2025-10-29T10:02:03Z","last":"2025-10-29T10:42:55Z","repo":"aboodhalabii/portfolio"},{"display":"AI Content Management System","tagline":"Content management for the Government of Jordan","body":"An AI-assisted content management system scaffolded for Jordanian government communications work.","stack":["Python","JavaScript"],"role":"Sole developer","tier":4,"parts":[],"public_url":"https://github.com/nizarhazaymeh/content-managment-2","access":null,"contributors":1,"first":"2026-03-15T07:46:51Z","last":"2026-03-16T06:37:37Z","repo":"nizarhazaymeh/content-managment-2"},{"display":"3D","tagline":"Single contribution","body":"A single contribution to a teammate's 3D project.","stack":[],"role":"Contributor","tier":4,"parts":[],"public_url":null,"access":"Private repository","contributors":2,"first":"2026-05-08T20:30:44Z","last":"2026-05-08T20:30:44Z","repo":null},{"display":"Task Planner","tagline":"Early task-planning experiment","body":"An early standalone task-planning experiment.","stack":["Python"],"role":"Sole developer","tier":4,"parts":[],"public_url":"https://github.com/nizarhazaymeh/taskplaner","access":null,"contributors":1,"first":"2025-11-05T12:33:53Z","last":"2025-11-05T12:33:53Z","repo":"nizarhazaymeh/taskplaner"}]}}</script>
 <script>
 (function(){
   "use strict";
@@ -411,9 +534,45 @@ footer{margin-top:70px; border-top:1px solid var(--rule); background:var(--surfa
   var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* ---------- masthead ---------- */
-  $("name").textContent = S.profile.name;
-  $("role").textContent = S.profile.title + " · " + S.profile.location;
-  $("blurb").textContent = S.profile.blurb;
+  /* The name rises letter by letter, the role types itself out and the blurb
+     fades in word by word. Each keeps a plain-text copy for screen readers. */
+  var ci = 0;
+  $("name").innerHTML = '<span class="sr-only">' + esc(S.profile.name) + '</span>'
+    + '<span aria-hidden="true">'
+    + S.profile.name.split(" ").map(function(w){
+        return '<span class="word">' + w.split("").map(function(c){
+          return '<span class="ch" style="--d:' + (80 + (ci++) * 38) + 'ms">' + esc(c) + '</span>';
+        }).join("") + '</span>';
+      }).join(" ")
+    + '</span>';
+  document.querySelector(".mast h1 .dot").style.setProperty("--d", (80 + ci * 38 + 380) + "ms");
+
+  var roleText = S.profile.title + " · " + S.profile.location;
+  $("role").innerHTML = '<span class="sr-only">' + esc(roleText) + '</span>'
+    + '<span aria-hidden="true"><span class="typed"></span><span class="caret"></span>'
+    + '<span class="ghost">' + esc(roleText) + '</span></span>';
+  (function typeRole(){
+    var typed = $("role").querySelector(".typed"), ghost = $("role").querySelector(".ghost");
+    var caret = $("role").querySelector(".caret"), n = 0;
+    if (still){ typed.textContent = roleText; ghost.textContent = ""; return; }
+    function tick(){
+      n++;
+      typed.textContent = roleText.slice(0, n);
+      ghost.textContent = roleText.slice(n);
+      if (n < roleText.length) setTimeout(tick, 22 + Math.random() * 30);
+      else setTimeout(function(){ caret.classList.add("gone"); }, 1800);
+    }
+    setTimeout(tick, 520);
+  })();
+
+  $("blurb").innerHTML = '<span class="sr-only">' + esc(S.profile.blurb) + '</span>'
+    + '<span aria-hidden="true">'
+    + S.profile.blurb.split(/\s+/).map(function(w, i){
+        return '<span class="w" style="--d:' + (300 + i * 14) + 'ms">' + esc(w) + '</span>';
+      }).join(" ")
+    + '</span>';
+  $("dockid").innerHTML = esc(S.profile.name.split(" ").map(function(w){ return w[0]; }).join(""))
+    + '<span class="dot">.</span>';
   var links = [
     ["github",   "https://github.com/" + S.login,        S.login,             true],
     ["linkedin", "https://" + S.profile.linkedin,        S.profile.linkedin_label, true],
@@ -497,7 +656,7 @@ footer{margin-top:70px; border-top:1px solid var(--rule); background:var(--surfa
 
   $("tier1").innerHTML = byTier[1].map(function(p){
     var d = parts(p, "services");
-    return '<article class="flag'+d.cls+'">'
+    return '<article class="flag sr'+d.cls+'">'
       + '<div class="flag-top"><h3>'+esc(p.display)+'</h3>'+roleTag(p)+'</div>'
       + '<p class="tagline">'+esc(p.tagline)+'</p>'
       + '<div class="flag-grid"><div>'
@@ -515,9 +674,9 @@ footer{margin-top:70px; border-top:1px solid var(--rule); background:var(--surfa
       + '</dl></div>' + d.html + '</article>';
   }).join("");
 
-  function card(p){
+  function card(p, i){
     var d = parts(p, "parts");
-    return '<article class="proj'+d.cls+'">'
+    return '<article class="proj sr'+d.cls+'" style="--d:'+(i % 2 * 110)+'ms">'
       + '<h4 style="margin-bottom:2px">'+esc(p.display)+'</h4>'
       + '<p class="tagline">'+esc(p.tagline)+'</p>'
       + '<p>'+esc(p.body)+'</p>'
@@ -536,8 +695,8 @@ footer{margin-top:70px; border-top:1px solid var(--rule); background:var(--surfa
   }
   $("tier2").innerHTML = byTier[2].map(card).join("");
   $("tier3").innerHTML = byTier[3].map(card).join("");
-  $("tier4").innerHTML = byTier[4].map(function(p){
-    return '<div class="mrow"><span class="nm">'+esc(p.display)+'</span>'
+  $("tier4").innerHTML = byTier[4].map(function(p, i){
+    return '<div class="mrow sr" style="--d:'+(i % 3 * 60)+'ms"><span class="nm">'+esc(p.display)+'</span>'
       + '<span class="ct">'+esc(p.role)+' · '+period(p)+'</span></div>';
   }).join("");
 
@@ -563,7 +722,7 @@ footer{margin-top:70px; border-top:1px solid var(--rule); background:var(--surfa
     return '<div class="grow'+lead+'">'
       + '<span class="gname" title="'+esc(p.display)+'">'+esc(p.display)+'</span>'
       + '<div class="gtrack"><div class="grid">'+gridCells+'</div>'
-      + '<div class="gbar" style="left:'+left.toFixed(2)+'%;width:'+width.toFixed(2)
+      + '<div class="gbar" data-a="'+a+'" data-b="'+b+'" style="left:'+left.toFixed(2)+'%;width:'+width.toFixed(2)
       +   '%;--d:'+(120 + i*55)+'ms" title="'+esc(period(p))+'"></div></div></div>';
   }).join("");
 
@@ -583,7 +742,7 @@ footer{margin-top:70px; border-top:1px solid var(--rule); background:var(--surfa
   }).join("");
 
   $("caps").innerHTML = S.tech.map(function(g){
-    return '<div class="cap"><h4>'+esc(g.group)+'</h4><div class="stack">'
+    return '<div class="cap sr-chips"><h4>'+esc(g.group)+'</h4><div class="stack">'
       + g.items.map(function(t){ return '<span class="chip">'+esc(t)+'</span>'; }).join("")
       + '</div></div>';
   }).join("");
@@ -607,11 +766,317 @@ footer{margin-top:70px; border-top:1px solid var(--rule); background:var(--surfa
 
   /* ---------- theme ---------- */
   var root = document.documentElement;
-  $("theme").addEventListener("click", function(){
+  $("theme").addEventListener("click", function(e){
     var cur = root.getAttribute("data-theme");
     if (!cur) cur = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    root.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+    function flip(){ root.setAttribute("data-theme", cur === "dark" ? "light" : "dark"); }
+    if (still || !document.startViewTransition){ flip(); return; }
+    /* the new theme spreads out in a circle from the button */
+    var r = e.currentTarget.getBoundingClientRect();
+    var x = r.left + r.width / 2, y = r.top + r.height / 2;
+    var R = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    document.startViewTransition(flip).ready.then(function(){
+      root.animate(
+        { clipPath: ["circle(0px at "+x+"px "+y+"px)", "circle("+R+"px at "+x+"px "+y+"px)"] },
+        { duration: 650, easing: "cubic-bezier(.22,.72,.26,1)",
+          pseudoElement: "::view-transition-new(root)" });
+    });
   });
+
+  /* ---------- motion ---------- */
+  var Ln = function(sel, ctx){ return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); };
+
+  /* technology ticker: every technology once, doubled so the loop is seamless */
+  var seen = {}, tech = [];
+  S.tech.forEach(function(g){ g.items.forEach(function(t){ if (!seen[t]){ seen[t] = 1; tech.push(t); } }); });
+  var tk = tech.map(function(t){ return '<span>' + esc(t) + '</span>'; }).join("");
+  $("ticker").innerHTML = tk + tk;
+  $("ticker").style.setProperty("--dur", Math.max(30, tech.length * 2.6) + "s");
+
+  /* chips stagger in the order they appear */
+  Ln(".stack").forEach(function(st){
+    Ln(".chip", st).forEach(function(c, i){ c.style.setProperty("--i", i); });
+  });
+
+  /* section headings rise in sequence */
+  Ln("main section").forEach(function(sec){
+    Ln(":scope > .eyebrow, :scope > .sectitle, :scope > .secnote", sec).forEach(function(el, i){
+      el.classList.add("sr"); el.style.setProperty("--d", (i * 90) + "ms");
+    });
+  });
+
+  /* eyebrows decode from scrambled glyphs when they come into view */
+  var GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/<>#*";
+  function scramble(el){
+    if (still || el.dataset.done) return;
+    el.dataset.done = 1;
+    var final = el.textContent, t0 = null, dur = 700;
+    el.setAttribute("aria-label", final);
+    function step(ts){
+      if (t0 === null) t0 = ts;
+      var p = Math.min(1, (ts - t0) / dur), fixed = Math.floor(p * final.length);
+      el.textContent = final.split("").map(function(c, i){
+        return i < fixed || c === " " ? c : GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+      }).join("");
+      if (p < 1) requestAnimationFrame(step); else el.textContent = final;
+    }
+    requestAnimationFrame(step);
+  }
+
+  /* language percentages count up alongside their bars */
+  function countLangs(){
+    Ln(".lpct").forEach(function(el, i){
+      var to = parseFloat(el.textContent), t0 = null, dur = 900;
+      if (still || !to) return;
+      el.textContent = "0%";
+      setTimeout(function(){
+        requestAnimationFrame(function step(ts){
+          if (t0 === null) t0 = ts;
+          var p = Math.min(1, (ts - t0) / dur);
+          el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))) + "%";
+          if (p < 1) requestAnimationFrame(step);
+        });
+      }, 140 + i * 70);
+    });
+  }
+
+  /* timeline playhead: sweeps the months once the bars have drawn, lighting
+     every engagement that was running in the month it passes */
+  function playhead(){
+    if (still) return;
+    var host = $("grows"), ph = document.createElement("div");
+    ph.className = "gplay"; host.appendChild(ph);
+    var bars = Ln(".gbar", host), mons = Ln("#gmonths span"), t0 = null, dur = 2800;
+    function step(ts){
+      if (t0 === null){ t0 = ts; ph.classList.add("on"); }
+      var p = Math.min(1, (ts - t0) / dur), e = p < .5 ? 2*p*p : 1 - Math.pow(-2*p + 2, 2) / 2;
+      var m = Math.min(cols - 1, Math.floor(e * cols));
+      ph.style.setProperty("--p", e.toFixed(4));
+      mons.forEach(function(s, i){ s.classList.toggle("hot", i === m); });
+      bars.forEach(function(b){ b.classList.toggle("hot", +b.dataset.a <= m && m <= +b.dataset.b); });
+      if (p < 1) return requestAnimationFrame(step);
+      setTimeout(function(){
+        ph.classList.remove("on");
+        mons.forEach(function(s){ s.classList.remove("hot"); });
+        bars.forEach(function(b){ b.classList.remove("hot"); });
+      }, 500);
+    }
+    setTimeout(function(){ requestAnimationFrame(step); }, 160 + TL.length * 55 + 700);
+  }
+
+  /* one observer drives every scroll-triggered effect */
+  var watched = Ln(".sr, .sr-chips, .gantt, .langs, main section");
+  function enter(el){
+    el.classList.add("in");
+    if (el.tagName === "SECTION") Ln(":scope > .eyebrow", el).forEach(scramble);
+    if (el.classList.contains("gantt")) playhead();
+    if (el.classList.contains("langs")) countLangs();
+  }
+  if ("IntersectionObserver" in window){
+    var io = new IntersectionObserver(function(es){
+      es.forEach(function(en){ if (en.isIntersecting){ enter(en.target); io.unobserve(en.target); } });
+    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+    watched.forEach(function(el){ io.observe(el); });
+  } else watched.forEach(enter);
+
+  /* scroll progress, plus the dock that appears once the masthead is gone */
+  var prog = $("progress"), dock = $("dock"), mast = document.querySelector("header.mast");
+  var ticking = false;
+  function onScroll(){
+    ticking = false;
+    var h = document.documentElement.scrollHeight - innerHeight;
+    prog.style.transform = "scaleX(" + (h > 0 ? scrollY / h : 0) + ")";
+    dock.classList.toggle("show", mast.getBoundingClientRect().bottom < 0);
+    var cur = null;
+    Ln("main section").forEach(function(s){ if (s.getBoundingClientRect().top < innerHeight * .4) cur = s.id; });
+    Ln("#docklinks a").forEach(function(a){
+      var on = a.getAttribute("href") === "#" + cur;
+      a.classList.toggle("on", on);
+      if (on) moveInd(a);
+    });
+    if (!cur) $("dockind").style.opacity = 0;
+  }
+  var lastOn = null;
+  function moveInd(a){
+    var ind = $("dockind"), dl = $("docklinks");
+    if (a !== lastOn && dl.scrollWidth > dl.clientWidth)   /* keep the active link in view on phones */
+      dl.scrollTo({ left: a.offsetLeft - (dl.clientWidth - a.offsetWidth) / 2, behavior: still ? "auto" : "smooth" });
+    lastOn = a;
+    ind.style.opacity = 1;
+    ind.style.width = a.offsetWidth + "px";
+    ind.style.transform = "translateX(" + a.offsetLeft + "px)";
+  }
+  addEventListener("scroll", function(){ if (!ticking){ ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
+  addEventListener("resize", onScroll);
+  onScroll();
+
+  if (!still && window.matchMedia("(hover: hover)").matches){
+    /* cursor spotlight on cards */
+    document.addEventListener("pointermove", function(e){
+      var c = e.target.closest && e.target.closest(".flag, .proj, .gantt");
+      if (!c) return;
+      var r = c.getBoundingClientRect();
+      c.style.setProperty("--mx", (e.clientX - r.left) + "px");
+      c.style.setProperty("--my", (e.clientY - r.top) + "px");
+    });
+    /* contact links lean toward the cursor */
+    Ln(".clink, .themebtn").forEach(function(el){
+      el.addEventListener("pointermove", function(e){
+        var r = el.getBoundingClientRect();
+        var dx = (e.clientX - r.left - r.width / 2) * .18, dy = (e.clientY - r.top - r.height / 2) * .32;
+        el.style.transform = "translate(" + dx.toFixed(1) + "px," + (dy - 1).toFixed(1) + "px)";
+      });
+      el.addEventListener("pointerleave", function(){ el.style.transform = ""; });
+    });
+  }
+
+  /* ---------- the masthead network ----------
+     A road network of jittered intersections. Vehicles travel the edges and
+     pick a new road at each junction; sensors pulse now and then; roads near
+     the cursor light up. Pauses offscreen and in background tabs. */
+  (function flow(){
+    var cv = $("flow");
+    if (!cv || !cv.getContext) return;
+    var ctx = cv.getContext("2d"), host = cv.parentNode;
+    var W = 0, H = 0, nodes = [], edges = [], cars = [], pulses = [];
+    var mouse = { x: -1e4, y: -1e4 }, col = {}, visible = true, raf = 0, last = 0;
+
+    function rgba(hex, a){
+      hex = hex.replace("#", "");
+      if (hex.length === 3) hex = hex.replace(/./g, "$&$&");
+      var n = parseInt(hex, 16);
+      return "rgba(" + (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")";
+    }
+    function colors(){
+      var cs = getComputedStyle(root);
+      ["accent", "rule", "mark"].forEach(function(k){ col[k] = cs.getPropertyValue("--" + k).trim(); });
+    }
+
+    function build(){
+      var dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = host.clientWidth; H = host.clientHeight;
+      cv.width = W * dpr; cv.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      nodes = []; edges = []; cars = []; pulses = [];
+      var sp = W < 700 ? 58 : 76, nc = Math.ceil(W / sp) + 2, nr = Math.ceil(H / sp) + 2, grid = [];
+      for (var r = 0; r < nr; r++){
+        grid.push([]);
+        for (var c = 0; c < nc; c++){
+          var n = Math.random() < .14 ? null
+            : { x: (c - .5) * sp + (Math.random() - .5) * sp * .5,
+                y: (r - .5) * sp + (Math.random() - .5) * sp * .5, adj: [] };
+          grid[r].push(n);
+          if (n) nodes.push(n);
+        }
+      }
+      function link(a, b){
+        if (!a || !b) return;
+        var e = { a: a, b: b, len: Math.hypot(b.x - a.x, b.y - a.y) };
+        edges.push(e); a.adj.push(e); b.adj.push(e);
+      }
+      for (r = 0; r < nr; r++) for (c = 0; c < nc; c++){
+        if (c + 1 < nc && Math.random() < .86) link(grid[r][c], grid[r][c + 1]);
+        if (r + 1 < nr && Math.random() < .86) link(grid[r][c], grid[r + 1][c]);
+        if (r + 1 < nr && c + 1 < nc && Math.random() < .1) link(grid[r][c], grid[r + 1][c + 1]);
+      }
+      var live = edges.filter(function(e){ return e.a.adj.length > 1 && e.b.adj.length > 1; });
+      var n = Math.max(16, Math.min(70, Math.round(edges.length / 5)));
+      for (var i = 0; i < n && live.length; i++){
+        var e = live[Math.floor(Math.random() * live.length)];
+        cars.push({ e: e, from: e.a, t: Math.random(), v: 34 + Math.random() * 70,
+                    lead: Math.random() < .6 });
+      }
+    }
+
+    function step(dt){
+      cars.forEach(function(k){
+        k.t += k.v * dt / k.e.len;
+        while (k.t >= 1){
+          var at = k.from === k.e.a ? k.e.b : k.e.a;
+          var opts = at.adj.filter(function(x){ return x !== k.e; });
+          var nx = opts.length ? opts[Math.floor(Math.random() * opts.length)] : k.e;
+          k.t -= 1; k.e = nx; k.from = at;
+          if (Math.random() < .035) pulses.push({ x: at.x, y: at.y, age: 0 });
+        }
+      });
+      pulses.forEach(function(p){ p.age += dt; });
+      pulses = pulses.filter(function(p){ return p.age < 1.4; });
+    }
+
+    function pos(k){
+      var a = k.from, b = k.from === k.e.a ? k.e.b : k.e.a;
+      return { x: a.x + (b.x - a.x) * k.t, y: a.y + (b.y - a.y) * k.t,
+               dx: (b.x - a.x) / k.e.len, dy: (b.y - a.y) / k.e.len };
+    }
+
+    function draw(){
+      ctx.clearRect(0, 0, W, H);
+      var R = 150;
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = rgba(col.rule, .95);
+      ctx.beginPath();
+      edges.forEach(function(e){ ctx.moveTo(e.a.x, e.a.y); ctx.lineTo(e.b.x, e.b.y); });
+      ctx.stroke();
+      edges.forEach(function(e){
+        var d = Math.hypot((e.a.x + e.b.x) / 2 - mouse.x, (e.a.y + e.b.y) / 2 - mouse.y);
+        if (d > R) return;
+        ctx.strokeStyle = rgba(col.accent, (1 - d / R) * .55);
+        ctx.beginPath(); ctx.moveTo(e.a.x, e.a.y); ctx.lineTo(e.b.x, e.b.y); ctx.stroke();
+      });
+      nodes.forEach(function(n){
+        var d = Math.hypot(n.x - mouse.x, n.y - mouse.y), near = d < R ? 1 - d / R : 0;
+        ctx.fillStyle = near ? rgba(col.accent, .35 + near * .65) : rgba(col.mark, .45);
+        ctx.beginPath(); ctx.arc(n.x, n.y, 1.5 + near * 1.8, 0, 6.283); ctx.fill();
+      });
+      pulses.forEach(function(p){
+        var q = p.age / 1.4;
+        ctx.strokeStyle = rgba(col.accent, (1 - q) * .6);
+        ctx.beginPath(); ctx.arc(p.x, p.y, 4 + q * 26, 0, 6.283); ctx.stroke();
+      });
+      ctx.lineCap = "round";
+      cars.forEach(function(k){
+        var p = pos(k), tail = Math.min(16, k.t * k.e.len + 4), c = k.lead ? col.accent : col.mark;
+        var g = ctx.createLinearGradient(p.x, p.y, p.x - p.dx * tail, p.y - p.dy * tail);
+        g.addColorStop(0, rgba(c, .9)); g.addColorStop(1, rgba(c, 0));
+        ctx.strokeStyle = g; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.dx * tail, p.y - p.dy * tail); ctx.stroke();
+        ctx.fillStyle = rgba(c, 1);
+        ctx.beginPath(); ctx.arc(p.x, p.y, 1.9, 0, 6.283); ctx.fill();
+      });
+      ctx.lineWidth = 1;
+    }
+
+    function frame(ts){
+      raf = 0;
+      var dt = last ? Math.min(.05, (ts - last) / 1000) : 0;
+      last = ts;
+      step(dt); draw();
+      if (visible && !document.hidden) raf = requestAnimationFrame(frame);
+    }
+    function start(){ if (!raf && !still){ last = 0; raf = requestAnimationFrame(frame); } }
+
+    colors(); build(); draw();
+    if (still) return;
+    start();
+
+    new MutationObserver(function(){ colors(); if (!raf) draw(); })
+      .observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function(){ colors(); });
+    var rw = W;
+    addEventListener("resize", function(){
+      if (host.clientWidth !== rw || Math.abs(host.clientHeight - H) > 40){ rw = host.clientWidth; build(); draw(); }
+    });
+    host.addEventListener("pointermove", function(e){
+      var r = cv.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top;
+    });
+    host.addEventListener("pointerleave", function(){ mouse.x = mouse.y = -1e4; });
+    if ("IntersectionObserver" in window){
+      new IntersectionObserver(function(es){
+        visible = es[0].isIntersecting; if (visible) start();
+      }).observe(host);
+    }
+    document.addEventListener("visibilitychange", function(){ if (!document.hidden) start(); });
+  })();
 
   /* ---------- footer ---------- */
   $("footnote").textContent =
