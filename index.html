@@ -109,6 +109,8 @@ h1,h2,h3,h4{font-family:"Archivo",system-ui,-apple-system,sans-serif; text-wrap:
   .is-open .chev{transform:rotate(90deg)!important}
   .caret,.gplay,.bg-streaks,.fx,.bg-wave,.cursorfx{display:none!important}
   .contact > *{opacity:1!important}
+  .donut .seg{stroke-dashoffset:0!important}
+  .langs .lrow,.cap h4 .cnt{opacity:1!important; transform:none!important}
 }
 
 /* ============ scroll progress & section dock ============ */
@@ -543,6 +545,67 @@ header.mast.tracking::before{animation:none}
 .mast-in{will-change:transform,opacity}
 /* once the letters have risen, stop clipping them so they can lift freely */
 .mast h1.landed .word{overflow:visible}
+
+/* ============ skills: more motion ============ */
+@keyframes segdraw{to{stroke-dashoffset:0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes gloss{from{transform:translateX(-100%)} to{transform:translateX(100%)}}
+@keyframes rowin{from{opacity:0; transform:translateX(-16px)} to{opacity:1; transform:none}}
+@keyframes chipglint{0%,6%,100%{box-shadow:0 0 0 0 transparent} 3%{box-shadow:0 0 0 1px var(--accent),0 0 14px var(--glow)}}
+.langwrap{display:grid; grid-template-columns:minmax(0,560px) 240px; gap:30px 64px;
+  align-items:center; margin-bottom:34px}
+.langwrap .langs{margin-bottom:0}
+@media (max-width:840px){.langwrap{grid-template-columns:1fr} .donut{justify-self:center}}
+/* the ring: segments draw in one after another; ticks and an orbiting dot turn slowly */
+.donut{position:relative; width:240px; height:240px}
+.donut svg{display:block; width:100%; height:100%; overflow:visible}
+.donut .track{fill:none; stroke:var(--rule-soft); stroke-width:18}
+.donut .seg{fill:none; stroke-width:18; cursor:pointer; stroke-dashoffset:var(--len);
+  transition:stroke-width .3s var(--ease), opacity .3s var(--ease)}
+.donut.in .seg{animation:segdraw .9s var(--ease) forwards; animation-delay:var(--d,0ms)}
+.donut .ticks,.donut .orbit{transform-box:view-box; transform-origin:120px 120px}
+.donut .ticks{animation:spin 80s linear infinite}
+.donut .orbit{animation:spin 11s linear infinite reverse}
+.donut .ticks line{stroke:var(--rule)}
+.donut .ticks line.major{stroke:var(--faint)}
+.donut .orbit circle{fill:var(--accent)}
+.dcenter{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; pointer-events:none; text-align:center}
+.dpct{font-family:"Archivo",sans-serif; font-weight:700; font-size:36px; letter-spacing:-.03em;
+  line-height:1; font-variant-numeric:tabular-nums}
+.dname{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--faint); margin-top:7px; transition:color .3s var(--ease)}
+/* hovering a bar or a segment picks out that language in both */
+.langwrap.hovering .dname{color:var(--accent-ink)}
+.langwrap.hovering .seg:not(.on){opacity:.28}
+.donut .seg.on{stroke:var(--accent)!important; stroke-width:24}
+.lrow{transition:opacity .3s var(--ease)}
+.langwrap.hovering .lrow:not(.on){opacity:.45}
+.lrow.on .lfill{background:var(--accent)}
+.lrow.on .lname{color:var(--accent-ink)}
+/* rows slide in; a gloss of light passes over each bar once it has grown */
+.langs:not(.in) .lrow{opacity:0}
+.langs.in .lrow{animation:rowin .6s var(--ease) backwards; animation-delay:calc(var(--i,0) * 70ms + 60ms)}
+.lfill{position:relative; overflow:hidden}
+.lfill::after{content:""; position:absolute; inset:0; transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent)}
+.langs.in:not(.glossed) .lfill::after{animation:gloss 1s var(--ease) forwards;
+  animation-delay:calc(var(--d,0ms) + 800ms)}
+.langs.glossed .lrow:hover .lfill::after,.langs.glossed .lrow.on .lfill::after{animation:gloss .9s var(--ease)}
+/* capability groups: a count badge, a light pulse that runs through the tags,
+   and a "used in N projects" badge on hover */
+.cap h4 .cnt{display:inline-block; margin-left:9px; padding:1px 7px; border-radius:999px;
+  background:var(--accent-soft); color:var(--accent-ink); font-size:10px; letter-spacing:.04em;
+  transform:scale(0); transition:transform .5s var(--ease)}
+.cap.in h4 .cnt{transform:scale(1); transition-delay:.35s}
+.cap.settled .chip{animation:chipglint 9s var(--ease) infinite;
+  animation-delay:calc(var(--g,0) * 600ms + var(--i,0) * 90ms + 600ms)}
+.cap .chip{position:relative}
+.cap .chip[data-n]::after{content:attr(data-n); position:absolute; top:-9px; right:-9px;
+  min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--accent);
+  color:#fff; font-size:10px; line-height:18px; text-align:center; pointer-events:none;
+  box-shadow:0 0 0 3px var(--glow); transform:scale(0); transition:transform .3s var(--ease)}
+.cap .chip[data-n]:hover::after{transform:scale(1)}
 </style>
 </head>
 <body>
@@ -634,7 +697,10 @@ header.mast.tracking::before{animation:none}
     <h2 class="sectitle">Languages and technologies</h2>
     <p class="secnote">Language shares are measured from the codebases themselves, weighted by
       how much of each repository is mine.</p>
-    <div class="langs" id="langs"></div>
+    <div class="langwrap" id="langwrap">
+      <div class="langs" id="langs"></div>
+      <div class="donut" id="donut"></div>
+    </div>
     <div class="caps" id="caps"></div>
   </section>
 
@@ -653,6 +719,7 @@ header.mast.tracking::before{animation:none}
   "use strict";
   var S = JSON.parse(document.getElementById("portfolio-data").textContent).stats;
   var $ = function(id){ return document.getElementById(id); };
+  var Ln = function(sel, ctx){ return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); };
   var esc = function(s){ var d=document.createElement("div"); d.textContent=s==null?"":s; return d.innerHTML; };
   var MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   var mlab = function(m){ var p=m.split("-"); return MON[+p[1]-1]+" "+p[0]; };
@@ -873,15 +940,93 @@ header.mast.tracking::before{animation:none}
   var L = S.languages.filter(function(l){ return l.share >= 0.5; }).slice(0, 7);
   var lmax = L[0] ? L[0].share : 1;
   $("langs").innerHTML = L.map(function(l, i){
-    return '<div class="lrow"><span class="lname">'+esc(l.name)+'</span>'
+    return '<div class="lrow" data-k="'+i+'" style="--i:'+i+'"><span class="lname">'+esc(l.name)+'</span>'
       + '<span class="ltrack"><span class="lfill" style="width:'
       + (l.share / lmax * 100).toFixed(1) + '%;--d:'+(140 + i*70)+'ms"></span></span>'
       + '<span class="lpct">'+l.share.toFixed(0)+'%</span></div>';
   }).join("");
 
-  $("caps").innerHTML = S.tech.map(function(g){
-    return '<div class="cap sr-chips"><h4>'+esc(g.group)+'</h4><div class="stack">'
-      + g.items.map(function(t){ return '<span class="chip">'+esc(t)+'</span>'; }).join("")
+  /* the ring beside the bars: one segment per language, sized to its share */
+  (function donut(){
+    var R = 84, C = 2 * Math.PI * R, GAP = 3, tot = 0, acc = 0, ticks = "";
+    L.forEach(function(l){ tot += l.share; });
+    for (var t = 0; t < 72; t++){
+      var a = t / 72 * 2 * Math.PI, major = t % 6 === 0, r1 = major ? 101 : 104;
+      ticks += '<line' + (major ? ' class="major"' : '') + ' x1="' + (120 + Math.cos(a) * r1).toFixed(2)
+        + '" y1="' + (120 + Math.sin(a) * r1).toFixed(2) + '" x2="' + (120 + Math.cos(a) * 110).toFixed(2)
+        + '" y2="' + (120 + Math.sin(a) * 110).toFixed(2) + '"/>';
+    }
+    var segs = L.map(function(l, i){
+      var len = Math.max(1, l.share / tot * C - GAP), rot = -90 + acc / tot * 360;
+      acc += l.share;
+      var colr = i === 0 ? "var(--accent)" : "color-mix(in srgb,var(--mark) " + Math.max(30, 90 - i * 10) + "%,transparent)";
+      return '<circle class="seg" data-k="' + i + '" cx="120" cy="120" r="' + R + '"'
+        + ' stroke-dasharray="' + len.toFixed(2) + ' ' + C.toFixed(2) + '"'
+        + ' transform="rotate(' + rot.toFixed(2) + ' 120 120)"'
+        + ' style="stroke:' + colr + ';--len:' + len.toFixed(2) + 'px;--d:' + (200 + i * 130) + 'ms"/>';
+    }).join("");
+    $("donut").innerHTML = '<svg viewBox="0 0 240 240" role="img" aria-label="Language shares">'
+      + '<g class="ticks">' + ticks + '</g>'
+      + '<g class="orbit"><circle cx="120" cy="6" r="3"/></g>'
+      + '<circle class="track" cx="120" cy="120" r="' + R + '"/>' + segs + '</svg>'
+      + '<div class="dcenter" aria-hidden="true"><div class="dpct" id="dpct">0%</div>'
+      + '<div class="dname" id="dname">' + esc(L[0] ? L[0].name : "") + '</div></div>';
+  })();
+
+  var shown = 0, tween = 0;
+  function setCenter(name, pct){
+    $("dname").textContent = name;
+    var from = shown, t0 = null, dur = still ? 0 : 380;
+    cancelAnimationFrame(tween);
+    tween = requestAnimationFrame(function step(ts){
+      if (t0 === null) t0 = ts;
+      var p = dur ? Math.min(1, (ts - t0) / dur) : 1;
+      shown = from + (pct - from) * (1 - Math.pow(1 - p, 3));
+      $("dpct").textContent = Math.round(shown) + "%";
+      if (p < 1) tween = requestAnimationFrame(step);
+    });
+  }
+  /* called when the ring scrolls into view */
+  function donutIn(){ if (L[0]) setTimeout(function(){ setCenter(L[0].name, L[0].share); }, still ? 0 : 250); }
+  var lw = $("langwrap");
+  function pick(k){
+    lw.classList.add("hovering");
+    Ln("#langwrap [data-k]").forEach(function(el){ el.classList.toggle("on", +el.dataset.k === k); });
+    setCenter(L[k].name, L[k].share);
+  }
+  Ln("#langwrap [data-k]").forEach(function(el){
+    el.addEventListener("pointerenter", function(){ pick(+el.dataset.k); });
+  });
+  lw.addEventListener("pointerleave", function(){
+    lw.classList.remove("hovering");
+    Ln("#langwrap .on").forEach(function(el){ el.classList.remove("on"); });
+    if (L[0]) setCenter(L[0].name, L[0].share);
+  });
+
+  /* how many projects list each technology, for the hover badge */
+  /* names differ between the two lists ("Next.js" vs "Next.js 16", "React Native
+     / Expo" vs "Expo / React Native"), so match on the leading word of each
+     alternative against the words of each project's stack */
+  var words = function(t){ return String(t).toLowerCase().split(/[\s\/()]+/).filter(Boolean); };
+  function uses(tech){
+    var keys = String(tech).split("/").map(function(a){ return words(a)[0]; })
+      .filter(function(k){ return k && k.length >= 3; });
+    return S.projects.filter(function(p){
+      return (p.stack || []).some(function(item){
+        return words(item).some(function(w){
+          return keys.some(function(k){ return w.indexOf(k) === 0; });
+        });
+      });
+    }).length;
+  }
+  $("caps").innerHTML = S.tech.map(function(g, gi){
+    return '<div class="cap sr-chips" style="--g:'+gi+'"><h4>'+esc(g.group)
+      + '<span class="cnt">'+g.items.length+'</span></h4><div class="stack">'
+      + g.items.map(function(t){
+          var n = uses(t);
+          return '<span class="chip"' + (n ? ' data-n="'+n+'" title="Used in '+n+' project'+(n > 1 ? 's' : '')+'"' : '')
+            + '>'+esc(t)+'</span>';
+        }).join("")
       + '</div></div>';
   }).join("");
 
@@ -922,7 +1067,6 @@ header.mast.tracking::before{animation:none}
   });
 
   /* ---------- motion ---------- */
-  var Ln = function(sel, ctx){ return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); };
 
   /* technology ticker: every technology once, doubled so the loop is seamless */
   var seen = {}, tech = [];
@@ -1003,13 +1147,14 @@ header.mast.tracking::before{animation:none}
   }
 
   /* one observer drives every scroll-triggered effect */
-  var watched = Ln(".sr, .sr-chips, .gantt, .langs, main section");
+  var watched = Ln(".sr, .sr-chips, .gantt, .langs, .donut, main section");
   function enter(el){
     el.classList.add("in");
     setTimeout(function(){ el.classList.add("settled"); }, 1900);
     if (el.tagName === "SECTION") Ln(":scope > .eyebrow", el).forEach(scramble);
     if (el.classList.contains("gantt")) playhead();
-    if (el.classList.contains("langs")) countLangs();
+    if (el.classList.contains("langs")){ countLangs(); setTimeout(function(){ el.classList.add("glossed"); }, 2900); }
+    if (el.classList.contains("donut")) donutIn();
   }
   if ("IntersectionObserver" in window){
     var io = new IntersectionObserver(function(es){
