@@ -107,7 +107,7 @@ h1,h2,h3,h4{font-family:"Archivo",system-ui,-apple-system,sans-serif; text-wrap:
   *{animation:none!important; transition:none!important}
   .reveal,.drawline,.gbar,.lfill,.sr,.ch,.w,.sr-chips .chip,.flow,.mast h1 .dot{opacity:1!important; transform:none!important}
   .is-open .chev{transform:rotate(90deg)!important}
-  .caret,.gplay,.bg-streaks,.fx{display:none!important}
+  .caret,.gplay,.bg-streaks,.fx,.bg-wave,.cursorfx{display:none!important}
 }
 
 /* ============ scroll progress & section dock ============ */
@@ -442,7 +442,7 @@ footer{margin-top:70px; border-top:1px solid var(--rule); background:var(--surfa
 .bg-orbs i:nth-child(2){right:-10%; top:38%; animation-duration:34s; animation-delay:-9s}
 .bg-orbs i:nth-child(3){left:28%; bottom:-22%; animation-duration:40s; animation-delay:-18s; opacity:.6}
 /* dot grid; a second accent copy shows only in a circle around the cursor */
-.bg-grid,.bg-hot{position:absolute; inset:0; background-size:26px 26px;
+.bg-grid,.bg-hot,.bg-wave{position:absolute; inset:0; background-size:26px 26px;
   background-image:radial-gradient(circle,var(--dot) 1.1px,transparent 1.5px)}
 .bg-grid{--dot:var(--rule);
   -webkit-mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.45) 100%);
@@ -496,16 +496,32 @@ footer{margin-top:70px; border-top:1px solid var(--rule); background:var(--surfa
 .is-open .part{animation:rise .45s var(--ease) backwards; animation-delay:calc(var(--i,0) * 32ms + 90ms)}
 .proj h4,.flag h3{transition:color .24s var(--ease), transform .4s var(--ease)}
 .proj:hover h4,.flag:hover h3{transform:translateX(4px)}
+
+/* ============ more background: drifting network, grid wave ============ */
+@keyframes wave{from{-webkit-mask-position:100% 100%; mask-position:100% 100%}
+  to{-webkit-mask-position:0 0; mask-position:0 0}}
+.bg-net{position:absolute; inset:0; width:100%; height:100%; display:block}
+/* a band of light that sweeps diagonally across the dot grid, then rests */
+.bg-wave{--dot:var(--accent); opacity:.6;
+  -webkit-mask-image:linear-gradient(115deg,transparent 42%,#000 50%,transparent 58%);
+          mask-image:linear-gradient(115deg,transparent 42%,#000 50%,transparent 58%);
+  -webkit-mask-size:300% 300%; mask-size:300% 300%; animation:wave 13s linear infinite}
+
+/* ============ cursor layer: above everything, never catches clicks ============ */
+.cursorfx{position:fixed; inset:0; width:100%; height:100%; z-index:70; pointer-events:none}
 </style>
 </head>
 <body>
 
 <div class="bg" aria-hidden="true">
   <div class="bg-orbs" id="bgorbs"><i></i><i></i><i></i></div>
+  <canvas class="bg-net" id="bgnet"></canvas>
   <div class="bg-grid"></div>
   <div class="bg-hot" id="bghot"></div>
+  <div class="bg-wave"></div>
   <div class="bg-streaks" id="bgstreaks"></div>
 </div>
+<canvas class="cursorfx" id="cursorfx" aria-hidden="true"></canvas>
 
 <div class="progress" id="progress"></div>
 <nav class="dock" id="dock" aria-label="Sections">
@@ -1052,6 +1068,211 @@ footer{margin-top:70px; border-top:1px solid var(--rule); background:var(--surfa
       el.addEventListener("animationiteration", function(e){ place(e.currentTarget); });
       host.appendChild(el);
     }
+  })();
+
+  /* ---------- shared pointer state and palette for the full-page canvases ---------- */
+  var P = { x: -1e4, y: -1e4, type: "", down: false, hover: 0, moved: 0, shocks: [] };
+  var HOVER2 = "a, button, .chip, .themebtn", HOVER1 = ".expandable, .flag, .proj, .gantt";
+  var pal = {};
+  function hexA(hex, a){
+    hex = (hex || "#888").replace("#", "");
+    if (hex.length === 3) hex = hex.replace(/./g, "$&$&");
+    var n = parseInt(hex, 16);
+    return "rgba(" + (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")";
+  }
+  function readPal(){
+    var cs = getComputedStyle(root);
+    ["accent", "accent-ink", "mark", "rule"].forEach(function(k){ pal[k] = cs.getPropertyValue("--" + k).trim(); });
+  }
+  readPal();
+  new MutationObserver(readPal).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", readPal);
+  function fitCanvas(cv, maxDpr){
+    var dpr = Math.min(maxDpr, window.devicePixelRatio || 1), c = cv.getContext("2d");
+    cv.width = innerWidth * dpr; cv.height = innerHeight * dpr;
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return c;
+  }
+  var wakers = [];
+  function wake(){ wakers.forEach(function(f){ f(); }); }
+  document.addEventListener("pointermove", function(e){
+    P.x = e.clientX; P.y = e.clientY; P.type = e.pointerType; P.moved = performance.now();
+    wake();
+  }, { passive: true });
+  document.addEventListener("pointerdown", function(e){
+    P.x = e.clientX; P.y = e.clientY; P.type = e.pointerType; P.down = true;
+    P.shocks.push({ x: e.clientX, y: e.clientY, t: performance.now(), hitNet: false, hitFx: false });
+    wake();
+  }, { passive: true });
+  document.addEventListener("pointerup", function(){ P.down = false; });
+  document.addEventListener("pointerover", function(e){
+    var t = e.target;
+    P.hover = !t.closest ? 0 : t.closest(HOVER2) ? 2 : t.closest(HOVER1) ? 1 : 0;
+  });
+  document.documentElement.addEventListener("pointerleave", function(){ P.x = P.y = -1e4; P.type = ""; });
+  addEventListener("blur", function(){ P.x = P.y = -1e4; P.type = ""; });
+
+  /* ---------- background network ----------
+     Points drift slowly across the whole page, link to their neighbours and
+     to the cursor, edge away from it, and are thrown outward by a click. */
+  (function bgNet(){
+    var cv = $("bgnet");
+    if (!cv || !cv.getContext) return;
+    var ctx, W, H, pts = [], rings = [], raf = 0, last = 0;
+    function size(){
+      ctx = fitCanvas(cv, 1.5); W = innerWidth; H = innerHeight;
+      var n = Math.max(22, Math.min(70, Math.round(W * H / 24000)));
+      while (pts.length < n){
+        var a = Math.random() * 6.283, v = 6 + Math.random() * 12;
+        pts.push({ x: Math.random() * W, y: Math.random() * H,
+                   bx: Math.cos(a) * v, by: Math.sin(a) * v, vx: 0, vy: 0, r: .9 + Math.random() * 1.4 });
+      }
+      pts.length = n;
+      pts.forEach(function(p){ p.x = Math.min(p.x, W); p.y = Math.min(p.y, H); });
+    }
+    function step(dt, now){
+      P.shocks.forEach(function(s){
+        if (s.hitNet) return; s.hitNet = true;
+        rings.push({ x: s.x, y: s.y, age: 0 });
+        pts.forEach(function(p){
+          var dx = p.x - s.x, dy = p.y - s.y, d = Math.hypot(dx, dy) || 1;
+          if (d < 320){ var f = (1 - d / 320) * 420; p.vx += dx / d * f; p.vy += dy / d * f; }
+        });
+      });
+      rings.forEach(function(r){ r.age += dt; });
+      rings = rings.filter(function(r){ return r.age < 1.3; });
+      pts.forEach(function(p){
+        var dx = p.x - P.x, dy = p.y - P.y, d = Math.hypot(dx, dy) || 1;
+        if (d < 170){ var f = (1 - d / 170) * 90; p.vx += dx / d * f * dt; p.vy += dy / d * f * dt; }
+        var k = Math.min(1, dt * 1.6);           /* ease back to the resting drift */
+        p.vx += (0 - p.vx) * k; p.vy += (0 - p.vy) * k;
+        p.x += (p.bx + p.vx) * dt; p.y += (p.by + p.vy) * dt;
+        if (p.x < -20) p.x = W + 20; else if (p.x > W + 20) p.x = -20;
+        if (p.y < -20) p.y = H + 20; else if (p.y > H + 20) p.y = -20;
+      });
+    }
+    function draw(){
+      ctx.clearRect(0, 0, W, H);
+      var i, j, a, b, d, L = 135, M = 210;
+      ctx.lineWidth = 1;
+      for (i = 0; i < pts.length; i++){
+        a = pts[i];
+        for (j = i + 1; j < pts.length; j++){
+          b = pts[j]; d = Math.hypot(a.x - b.x, a.y - b.y);
+          if (d < L){
+            ctx.strokeStyle = hexA(pal.mark, (1 - d / L) * .32);
+            ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+          }
+        }
+        d = Math.hypot(a.x - P.x, a.y - P.y);
+        if (d < M){
+          ctx.strokeStyle = hexA(pal.accent, (1 - d / M) * .6);
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(P.x, P.y); ctx.stroke();
+        }
+        ctx.fillStyle = d < M ? hexA(pal.accent, .5 + (1 - d / M) * .5) : hexA(pal.mark, .5);
+        ctx.beginPath(); ctx.arc(a.x, a.y, a.r + (d < M ? (1 - d / M) * 1.4 : 0), 0, 6.283); ctx.fill();
+      }
+      rings.forEach(function(r){
+        var q = r.age / 1.3;
+        ctx.strokeStyle = hexA(pal.accent, (1 - q) * .45); ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(r.x, r.y, 10 + (1 - Math.pow(1 - q, 3)) * 320, 0, 6.283); ctx.stroke();
+      });
+    }
+    function frame(ts){
+      raf = 0;
+      var dt = last ? Math.min(.05, (ts - last) / 1000) : 0; last = ts;
+      step(dt, ts); draw();
+      if (!document.hidden) raf = requestAnimationFrame(frame);
+    }
+    size(); draw();
+    if (still) return;
+    function start(){ if (!raf){ last = 0; raf = requestAnimationFrame(frame); } }
+    start(); wakers.push(start);
+    addEventListener("resize", function(){ size(); draw(); });
+    document.addEventListener("visibilitychange", function(){ if (!document.hidden) start(); });
+  })();
+
+  /* ---------- cursor layer ----------
+     Always with the mouse, over every part of the page: a ring that trails
+     the pointer on a spring, swells over things you can press, tightens on
+     click and breathes when the mouse rests; a fading light trail; and a
+     ripple with sparks on every click or tap. */
+  (function cursorFx(){
+    var cv = $("cursorfx");
+    if (still || !cv || !cv.getContext) return;
+    var ctx, W, H, trail = [], rips = [], sparks = [], raf = 0, last = 0;
+    var ring = { x: -1e4, y: -1e4, r: 16, a: 0, fill: 0 };
+    function size(){ ctx = fitCanvas(cv, 2); W = innerWidth; H = innerHeight; }
+    function frame(ts){
+      raf = 0;
+      var dt = last ? Math.min(.05, (ts - last) / 1000) : 0; last = ts;
+      var mouse = P.type === "mouse" && P.x > -1e3;
+
+      P.shocks.forEach(function(s){
+        if (s.hitFx) return; s.hitFx = true;
+        rips.push({ x: s.x, y: s.y, age: 0 });
+        for (var i = 0; i < 10; i++){
+          var ang = i / 10 * 6.283 + Math.random() * .4, v = 120 + Math.random() * 130;
+          sparks.push({ x: s.x, y: s.y, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, age: 0 });
+        }
+      });
+      P.shocks = P.shocks.filter(function(s){ return !(s.hitFx && s.hitNet) && ts - s.t < 2000; });
+
+      if (mouse){
+        if (ring.x < -1e3){ ring.x = P.x; ring.y = P.y; }
+        var k = Math.min(1, dt * 15);
+        ring.x += (P.x - ring.x) * k; ring.y += (P.y - ring.y) * k;
+        var last2 = trail[trail.length - 1];
+        if (!last2 || last2.x !== P.x || last2.y !== P.y) trail.push({ x: P.x, y: P.y, t: ts });
+      }
+      var idle = ts - P.moved > 700;
+      var tr = P.down ? 9 : P.hover === 2 ? 26 : P.hover === 1 ? 20 : 15;
+      if (idle && !P.down) tr += Math.sin(ts / 260) * 2.6;
+      ring.r += (tr - ring.r) * Math.min(1, dt * 12);
+      ring.a += ((mouse ? 1 : 0) - ring.a) * Math.min(1, dt * 8);
+      ring.fill += ((P.hover === 2 ? 1 : 0) - ring.fill) * Math.min(1, dt * 10);
+
+      trail = trail.filter(function(p){ return ts - p.t < 320; });
+      rips.forEach(function(r){ r.age += dt; });
+      rips = rips.filter(function(r){ return r.age < .65; });
+      sparks.forEach(function(s){ s.age += dt; s.x += s.vx * dt; s.y += s.vy * dt; s.vx *= .9; s.vy *= .9; });
+      sparks = sparks.filter(function(s){ return s.age < .5; });
+
+      ctx.clearRect(0, 0, W, H);
+      ctx.lineCap = "round";
+      for (var i = 1; i < trail.length; i++){
+        var q = 1 - (ts - trail[i].t) / 320;
+        ctx.strokeStyle = hexA(pal.accent, q * .55);
+        ctx.lineWidth = q * 3.2;
+        ctx.beginPath(); ctx.moveTo(trail[i - 1].x, trail[i - 1].y); ctx.lineTo(trail[i].x, trail[i].y); ctx.stroke();
+      }
+      if (ring.a > .01){
+        if (ring.fill > .01){
+          ctx.fillStyle = hexA(pal.accent, ring.fill * .14 * ring.a);
+          ctx.beginPath(); ctx.arc(ring.x, ring.y, ring.r, 0, 6.283); ctx.fill();
+        }
+        ctx.strokeStyle = hexA(pal.accent, .6 * ring.a); ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(ring.x, ring.y, Math.max(2, ring.r), 0, 6.283); ctx.stroke();
+      }
+      rips.forEach(function(r){
+        var q = r.age / .65;
+        ctx.strokeStyle = hexA(pal.accent, (1 - q) * .7); ctx.lineWidth = 2 * (1 - q) + .5;
+        ctx.beginPath(); ctx.arc(r.x, r.y, 6 + (1 - Math.pow(1 - q, 3)) * 46, 0, 6.283); ctx.stroke();
+      });
+      sparks.forEach(function(s){
+        var q = 1 - s.age / .5;
+        ctx.strokeStyle = hexA(pal.accent, q * .85); ctx.lineWidth = 1.6 * q + .3;
+        ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x - s.vx * .04, s.y - s.vy * .04); ctx.stroke();
+      });
+
+      var busy = ring.a > .01 || trail.length || rips.length || sparks.length;
+      if (busy && !document.hidden) raf = requestAnimationFrame(frame);
+      else ctx.clearRect(0, 0, W, H);
+    }
+    function start(){ if (!raf){ last = 0; raf = requestAnimationFrame(frame); } }
+    size(); wakers.push(start);
+    addEventListener("resize", size);
+    document.addEventListener("visibilitychange", function(){ if (!document.hidden) start(); });
   })();
 
   /* ---------- the masthead network ----------
